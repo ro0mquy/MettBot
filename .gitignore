@@ -1,0 +1,10 @@
+## similar to .o files in C/C++
+*.6
+*.8
+
+## libs, go-gb sadly builds them automagically
+*.a
+
+## generally ignore object files..
+_obj/*
+bin/*
