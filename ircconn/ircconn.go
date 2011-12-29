@@ -40,20 +40,33 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 			// TODO: err
 			s, err := ic.bio.ReadString('\n')
 			if err != nil {
-				log.Printf("Can't read from input channel: " + err.String())
-				return
+				select {
+				case d := <-ic.done:
+					ic.done <- d
+					return
+				default:
+					log.Printf("Can't read from input channel: " + err.String())
+					return
+				}
 			}
 			ic.Input <- s
 		}
 	}()
 	go func() {
 		for {
-			s := <-ic.Output
-			if _, err = ic.bio.WriteString(s); err != nil {
-				log.Printf("Can't write to output channel: " + err.String())
-				return
+			select {
+			case s := <-ic.Output:
+				if _, err = ic.bio.WriteString(s); err != nil {
+					log.Printf("Can't write to output channel: " + err.String())
+					return
+				}
+				ic.bio.Flush()
+			case d := <-ic.done:
+				ic.done <- d
+				if d {
+					return
+				}
 			}
-			ic.bio.Flush()
 		}
 	}()
 
@@ -61,6 +74,6 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 }
 
 func (ic IRCConn) Quit() {
+	ic.conn.Close()
 	ic.done <- true
-	ic.Close()
 }
