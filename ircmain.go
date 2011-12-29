@@ -2,7 +2,7 @@ package main
 
 import (
 	"ircconn"
-//	"fmt"
+	//	"fmt"
 )
 
 func main() {
@@ -11,16 +11,16 @@ func main() {
 	s.Output <- "Hello, world\n"
 	s.Output <- "Asdf!\n"
 	s.Quit()
-//	go output_channel(serverData)
-//	for {
-//		fmt.Scanln(st)
-//		clientInput <- st
-//	}
+	//	go output_channel(serverData)
+	//	for {
+	//		fmt.Scanln(st)
+	//		clientInput <- st
+	//	}
 }
 
 func output_channel(c <-chan string) {
-//	for {
-//		s := <- c
-//		fmt.Println("-> " + s)
-//	}
+	//	for {
+	//		s := <- c
+	//		fmt.Println("-> " + s)
+	//	}
 }

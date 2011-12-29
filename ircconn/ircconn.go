@@ -7,14 +7,13 @@ import (
 	"bufio"
 )
 
-
 type IRCConn struct {
 	conn *net.TCPConn
-	bio *bufio.ReadWriter
+	bio  *bufio.ReadWriter
 	done chan bool
 
 	Output chan string
-	Input chan string
+	Input  chan string
 }
 
 func NewIRCConn() *IRCConn {
