@@ -10,6 +10,7 @@ import (
 type IRCConn struct {
 	conn *net.TCPConn
 	bio  *bufio.ReadWriter
+	tmgr *ThrottleMgr
 	done chan bool
 
 	Output chan string
@@ -17,7 +18,7 @@ type IRCConn struct {
 }
 
 func NewIRCConn() *IRCConn {
-	return &IRCConn{done: make(chan bool), Output: make(chan string), Input: make(chan string)}
+	return &IRCConn{done: make(chan bool), Output: make(chan string), Input: make(chan string), tmgr: new(ThrottleMgr)}
 }
 
 func (ic *IRCConn) Connect(hostport string) os.Error {
@@ -55,6 +56,7 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 		for {
 			select {
 			case s := <-ic.Output:
+				ic.tmgr.WaitSend(s)
 				if _, err = ic.bio.WriteString(s); err != nil {
 					log.Printf("Can't write to output channel: " + err.String())
 					return
