@@ -60,3 +60,7 @@ func (bp *BasicProtocol) ProcessLine(msg *IRCMessage) {
 func (bp *BasicProtocol) Unregister() {
 	bp.done <- true
 }
+func (bp *BasicProtocol) Info() {
+}
+func (bp *BasicProtocol) ProcessCommand() {
+}
