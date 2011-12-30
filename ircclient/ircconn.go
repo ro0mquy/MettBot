@@ -18,7 +18,7 @@ type IRCConn struct {
 }
 
 func NewIRCConn() *IRCConn {
-	return &IRCConn{done: make(chan bool), Output: make(chan string), Input: make(chan string), tmgr: new(ThrottleIrcu)}
+	return &IRCConn{done: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(ThrottleIrcu)}
 }
 
 func (ic *IRCConn) Connect(hostport string) os.Error {
