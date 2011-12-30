@@ -18,6 +18,7 @@ func NewIRCClient(hostport, nick, rname, ident string) *IRCClient {
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
 	c.conf["ident"] = ident
+	c.RegisterPlugin(&BasicProtocol{})
 	return c
 }
 
@@ -42,19 +43,18 @@ func (ic *IRCClient) Connect() os.Error {
 	nick := ic.conf["nick"]
 	for {
 		s := ParseServerLine(<-ic.conn.Input)
-		// TODO: Forward processed commands to plugins
+		// TODO error handling
+		for _, p := range ic.plugins {
+			p.ProcessLine(s)
+		}
 		switch s.Command {
 		case "433":
+			// Nickname already in use
 			nick = nick + "_"
 			ic.conn.Output <- "NICK " + nick + "\n"
-		case "PING":
-			ic.conn.Output <- "PONG :" + s.Args[0]
-		case "NOTICE":
-			// ignore
 		case "001":
+			// Successfully registered
 			return nil
-		default:
-			log.Fatal("Unexpected server message")
 		}
 	}
 	return nil // Never happens
