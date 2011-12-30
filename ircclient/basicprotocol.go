@@ -60,7 +60,11 @@ func (bp *BasicProtocol) ProcessLine(msg *IRCMessage) {
 func (bp *BasicProtocol) Unregister() {
 	bp.done <- true
 }
-func (bp *BasicProtocol) Info() {
+
+func (bp *BasicProtocol) Info() string {
+	return "basic irc protocol (e.g. PING), implemented as plugin."
 }
+
 func (bp *BasicProtocol) ProcessCommand(cmd *IRCCommand) {
+	// TODO
 }
