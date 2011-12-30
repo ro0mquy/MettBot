@@ -13,6 +13,49 @@ type IRCMessage struct {
 	Complete string
 }
 
+type IRCCommand struct {
+	IRCMessage
+	Args []string
+}
+
+func ParseCommand(msg *IRCMessage, trigger byte) *IRCCommand {
+	if msg.Command != "PRIVMSG" || len(msg.Args) == 0 || msg.Args[0][0] != trigger {
+		return nil
+	}
+	toParse := msg.Args[0]
+	ret := &IRCCommand{*msg, make([]string, 0)}
+	for i, last, matchP := 1, 0, false; i < len(toParse); i++ {
+		// Match "longer strings in parenthesis"
+		if toParse[i] == '"' && (toParse[i-1] == ' ' || toParse[i-1] == '\t' || matchP) {
+			if !matchP {
+				last = i
+				matchP = true
+			} else if toParse[i-1] == '\\' {
+				// escaped parenthesis
+			} else {
+				ret.Args = append(ret.Args, toParse[last+1:i])
+				matchP = false
+				// Skip whitespace
+				i++
+				for i < len(toParse) && (toParse[i] == ' ' || toParse[i] == '\t') {
+					i++
+				}
+				last = i
+			}
+		// Match texts seperated by whitespace
+		} else if !matchP && (toParse[i] == ' ' || toParse[i] == '\t') {
+			log.Println(toParse[last:i])
+			ret.Args = append(ret.Args, toParse[last:i])
+			for i < len(toParse) && (toParse[i] == ' ' || toParse[i] == '\t') {
+				i++
+			}
+			last = i
+			i--
+		}
+	}
+	return ret
+}
+
 func ParseServerLine(line string) *IRCMessage {
 	im := &IRCMessage{"", "", "", make([]string, 0), line}
 
