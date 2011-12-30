@@ -60,6 +60,16 @@ func (ic *IRCClient) Connect() os.Error {
 	return nil // Never happens
 }
 
+func (ic *IRCClient) InputLoop() {
+	for {
+		s := ParseServerLine(<-ic.conn.Input)
+		// TODO error handling
+		for _, p := range ic.plugins {
+			p.ProcessLine(s)
+		}
+	}
+}
+
 func (ic *IRCClient) Disconnect(quitmsg string) {
 	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.conn.Flush()

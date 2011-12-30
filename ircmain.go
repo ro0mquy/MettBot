@@ -2,7 +2,7 @@ package main
 
 import (
 	"ircclient"
-	"time"
+//	"time"
 )
 
 var server_lines= []string{
@@ -43,7 +43,7 @@ func main() {
 	//}
 	s := ircclient.NewIRCClient("localhost:6667", "testbot", "testbot", "ident")
 	s.Connect()
-	time.Sleep(15e9)
+	s.InputLoop()
 	//s.Output <- "Hello, world\n"
 	//s.Output <- "Asdf!\n"
 	//s.Quit()
