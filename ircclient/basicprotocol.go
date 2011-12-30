@@ -31,7 +31,7 @@ func (bp *BasicProtocol) Register(cl *IRCClient) {
 				continue
 			}
 			bp.lastping = time.Seconds()
-			bp.ic.conn.Output <- "PING :client\n"
+			bp.ic.conn.Output <- "PING :client"
 			bp.timer = time.NewTimer(5e9) // TODO
 			go func() {
 				select {

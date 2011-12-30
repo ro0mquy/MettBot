@@ -38,8 +38,8 @@ func (ic *IRCClient) Connect() os.Error {
 		log.Println("Can't connect " + e.String())
 		return e
 	}
-	ic.conn.Output <- "NICK " + ic.conf["nick"] + "\n"
-	ic.conn.Output <- "USER " + ic.conf["ident"] + " * Q :" + ic.conf["rname"] + "\n"
+	ic.conn.Output <- "NICK " + ic.conf["nick"]
+	ic.conn.Output <- "USER " + ic.conf["ident"] + " * Q :" + ic.conf["rname"]
 	nick := ic.conf["nick"]
 	for {
 		s := ParseServerLine(<-ic.conn.Input)
@@ -51,7 +51,7 @@ func (ic *IRCClient) Connect() os.Error {
 		case "433":
 			// Nickname already in use
 			nick = nick + "_"
-			ic.conn.Output <- "NICK " + nick + "\n"
+			ic.conn.Output <- "NICK " + nick
 		case "001":
 			// Successfully registered
 			return nil

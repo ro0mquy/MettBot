@@ -49,14 +49,16 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 					return
 				}
 			}
+			s = s[:len(s)-2]
 			ic.Input <- s
-			log.Print("<< " + s)
+			log.Println("<< " + s)
 		}
 	}()
 	go func() {
 		for {
 			select {
 			case s := <-ic.Output:
+				s = s + "\n"
 				ic.tmgr.WaitSend(s)
 				log.Print(">> " + s)
 				if _, err = ic.bio.WriteString(s); err != nil {
