@@ -1,9 +1,7 @@
 package main
 
 import (
-	"ircconn"
-	"ircmsg"
-	//	"fmt"
+	"ircclient"
 )
 
 var server_lines= []string{
@@ -40,9 +38,9 @@ var server_lines= []string{
 
 func main() {
 	for _, line := range server_lines {
-		ircmsg.ParseServerLine(line)
+		ircclient.ParseServerLine(line)
 	}
-	s := ircconn.NewIRCConn()
+	s := ircclient.NewIRCConn()
 	s.Connect("localhost:6667")
 	s.Output <- "Hello, world\n"
 	s.Output <- "Asdf!\n"
