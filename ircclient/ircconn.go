@@ -50,6 +50,7 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 				}
 			}
 			ic.Input <- s
+			log.Print("<< " + s)
 		}
 	}()
 	go func() {
@@ -57,6 +58,7 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 			select {
 			case s := <-ic.Output:
 				ic.tmgr.WaitSend(s)
+				log.Print(">> " + s)
 				if _, err = ic.bio.WriteString(s); err != nil {
 					log.Printf("Can't write to output channel: " + err.String())
 					return
@@ -74,7 +76,13 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 	return nil
 }
 
-func (ic IRCConn) Quit() {
+func (ic *IRCConn) Flush() {
+	// TODO implement
+	// Should block until all data to server has been sent
+	// and bufio flushed
+}
+
+func (ic *IRCConn) Quit() {
 	ic.conn.Close()
 	ic.done <- true
 }

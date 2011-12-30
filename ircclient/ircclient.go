@@ -7,12 +7,13 @@ import (
 
 type IRCClient struct {
 	conn *IRCConn
-	conf map[string]interface{}
+	// TODO better config format
+	conf map[string]string
 	plugins map[string]Plugin
 }
 
 func NewIRCClient(hostport, nick, rname, ident string) *IRCClient {
-	c := &IRCClient{nil, make(map[string]interface{}), make(map[string]Plugin)}
+	c := &IRCClient{nil, make(map[string]string), make(map[string]Plugin)}
 	c.conf["nick"] = nick
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
@@ -29,15 +30,38 @@ func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 	return nil
 }
 
-func (ic *IRCClient) Connect() {
+func (ic *IRCClient) Connect() os.Error {
 	ic.conn = NewIRCConn()
-	hp, ok := ic.conf["hostport"].(string)
-	if !ok {
-		log.Fatal("Assertion failed")
+	e := ic.conn.Connect(ic.conf["hostport"])
+	if e != nil {
+		log.Println("Can't connect " + e.String())
+		return e
 	}
-	ic.conn.Connect(hp)
+	ic.conn.Output <- "NICK " + ic.conf["nick"] + "\n"
+	ic.conn.Output <- "USER " + ic.conf["ident"] + " * Q :" + ic.conf["rname"] + "\n"
+	nick := ic.conf["nick"]
+	for {
+		s := ParseServerLine(<-ic.conn.Input)
+		// TODO: Forward processed commands to plugins
+		switch s.Command {
+		case "433":
+			nick = nick + "_"
+			ic.conn.Output <- "NICK " + nick + "\n"
+		case "PING":
+			ic.conn.Output <- "PONG :" + s.Args[0]
+		case "NOTICE":
+			// ignore
+		case "001":
+			return nil
+		default:
+			log.Fatal("Unexpected server message")
+		}
+	}
+	return nil // Never happens
 }
 
 func (ic *IRCClient) Disconnect(quitmsg string) {
-	// TODO
+	ic.conn.Output <- "QUIT :" + quitmsg
+	ic.conn.Flush()
+	ic.conn.Quit()	// Shouldn't be needed, as server closes connection
 }

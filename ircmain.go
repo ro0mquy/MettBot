@@ -2,6 +2,7 @@ package main
 
 import (
 	"ircclient"
+	"time"
 )
 
 var server_lines= []string{
@@ -37,14 +38,15 @@ var server_lines= []string{
 }
 
 func main() {
-	for _, line := range server_lines {
-		ircclient.ParseServerLine(line)
-	}
-	s := ircclient.NewIRCConn()
-	s.Connect("localhost:6667")
-	s.Output <- "Hello, world\n"
-	s.Output <- "Asdf!\n"
-	s.Quit()
+	//for _, line := range server_lines {
+	//	ircclient.ParseServerLine(line)
+	//}
+	s := ircclient.NewIRCClient("localhost:6667", "testbot", "testbot", "ident")
+	s.Connect()
+	time.Sleep(15e9)
+	//s.Output <- "Hello, world\n"
+	//s.Output <- "Asdf!\n"
+	//s.Quit()
 	//	go output_channel(serverData)
 	//	for {
 	//		fmt.Scanln(st)

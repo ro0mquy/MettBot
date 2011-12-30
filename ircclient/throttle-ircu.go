@@ -4,7 +4,6 @@ package ircclient
 
 import (
 	"time"
-	"fmt"
 )
 
 type ThrottleIrcu struct {
@@ -24,7 +23,6 @@ func (tm *ThrottleIrcu) WaitSend(line string) {
 	}
 	tm.tscounter += int64((2 + len(line) / 120))
 	t := tm.tscounter - time.Seconds()
-	fmt.Println(t)
 	if t > 10 {
 		time.Sleep((t - 10) * 1e9)
 	}

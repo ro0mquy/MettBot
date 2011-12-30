@@ -53,6 +53,6 @@ func ParseServerLine(line string) *IRCMessage {
 		im.Args= append(im.Args, args[1])
 	}
 
-	log.Printf("im: %#v\n", im)
+	//log.Printf("im: %#v\n", im)
 	return im
 }
