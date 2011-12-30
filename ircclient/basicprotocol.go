@@ -62,5 +62,5 @@ func (bp *BasicProtocol) Unregister() {
 }
 func (bp *BasicProtocol) Info() {
 }
-func (bp *BasicProtocol) ProcessCommand() {
+func (bp *BasicProtocol) ProcessCommand(cmd *IRCCommand) {
 }
