@@ -65,7 +65,7 @@ func (ic *IRCClient) InputLoop() {
 		s := ParseServerLine(<-ic.conn.Input)
 		// TODO error handling
 		for _, p := range ic.plugins {
-			p.ProcessLine(s)
+			go p.ProcessLine(s)
 		}
 	}
 }
