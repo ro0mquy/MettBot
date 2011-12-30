@@ -31,6 +31,10 @@ func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 	return nil
 }
 
+func (ic IRCClient) GetPlugins() map[string]Plugin {
+	return ic.plugins
+}
+
 func (ic *IRCClient) Connect() os.Error {
 	ic.conn = NewIRCConn()
 	e := ic.conn.Connect(ic.conf["hostport"])
