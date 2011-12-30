@@ -54,9 +54,9 @@ func ParseCommand(msg *IRCMessage, trigger byte) *IRCCommand {
 			i--
 		}
 	}
-	ret.Command = ret.Args[0][1 : len(ret.Args[0])-1] // Strip off trigger
+	ret.Command = ret.Args[0][1 : len(ret.Args[0])] // Strip off trigger
 	ret.Source = msg.Source
-	ret.Args = ret.Args[1 : len(ret.Args)-1]
+	ret.Args = ret.Args[1 : len(ret.Args)]
 	return ret
 }
 
