@@ -14,8 +14,9 @@ type IRCMessage struct {
 }
 
 type IRCCommand struct {
-	IRCMessage
-	Args []string
+	Source  string
+	Command string
+	Args    []string
 }
 
 func ParseCommand(msg *IRCMessage, trigger byte) *IRCCommand {
@@ -23,7 +24,7 @@ func ParseCommand(msg *IRCMessage, trigger byte) *IRCCommand {
 		return nil
 	}
 	toParse := msg.Args[0]
-	ret := &IRCCommand{*msg, make([]string, 0)}
+	ret := &IRCCommand{"", "", make([]string, 0)}
 	for i, last, matchP := 1, 0, false; i < len(toParse); i++ {
 		// Match "longer strings in parenthesis"
 		if toParse[i] == '"' && (toParse[i-1] == ' ' || toParse[i-1] == '\t' || matchP) {
@@ -42,7 +43,7 @@ func ParseCommand(msg *IRCMessage, trigger byte) *IRCCommand {
 				}
 				last = i
 			}
-		// Match texts seperated by whitespace
+			// Match texts seperated by whitespace
 		} else if !matchP && (toParse[i] == ' ' || toParse[i] == '\t') {
 			log.Println(toParse[last:i])
 			ret.Args = append(ret.Args, toParse[last:i])
@@ -53,6 +54,9 @@ func ParseCommand(msg *IRCMessage, trigger byte) *IRCCommand {
 			i--
 		}
 	}
+	ret.Command = ret.Args[0][1 : len(ret.Args[0])-1] // Strip off trigger
+	ret.Source = msg.Source
+	ret.Args = ret.Args[1 : len(ret.Args)-1]
 	return ret
 }
 
