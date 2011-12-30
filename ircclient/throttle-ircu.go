@@ -7,7 +7,7 @@ import (
 )
 
 type ThrottleIrcu struct {
-	lastsent int64
+	lastsent  int64
 	tscounter int64
 }
 
@@ -18,10 +18,10 @@ func NewThrottleIrcu() *ThrottleIrcu {
 
 func (tm *ThrottleIrcu) WaitSend(line string) {
 	tm.lastsent = time.Seconds()
-	if(tm.lastsent > tm.tscounter) {
+	if tm.lastsent > tm.tscounter {
 		tm.tscounter = time.Seconds()
 	}
-	tm.tscounter += int64((2 + len(line) / 120))
+	tm.tscounter += int64((2 + len(line)/120))
 	t := tm.tscounter - time.Seconds()
 	if t > 10 {
 		time.Sleep((t - 10) * 1e9)

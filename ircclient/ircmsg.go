@@ -31,26 +31,26 @@ func ParseServerLine(line string) *IRCMessage {
 		if len(parts) > 3 {
 			line = parts[3]
 		} else {
-			line= ""
+			line = ""
 		}
 	} else {
 		parts := strings.SplitN(line, " ", 2) // cmd, rest
 		im.Command = parts[0]
 		if len(parts) > 1 {
-			line= parts[1]
+			line = parts[1]
 		} else {
-			line= ""
+			line = ""
 		}
 	}
 
 	args := strings.SplitN(line, ":", 2)
 	for _, a := range strings.Split(args[0], " ") {
 		if a != "" {
-			im.Args= append(im.Args, a)
+			im.Args = append(im.Args, a)
 		}
 	}
 	if len(args) > 1 {
-		im.Args= append(im.Args, args[1])
+		im.Args = append(im.Args, args[1])
 	}
 
 	//log.Printf("im: %#v\n", im)

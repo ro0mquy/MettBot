@@ -8,7 +8,7 @@ import (
 type IRCClient struct {
 	conn *IRCConn
 	// TODO better config format
-	conf map[string]string
+	conf    map[string]string
 	plugins map[string]Plugin
 }
 
@@ -73,5 +73,5 @@ func (ic *IRCClient) InputLoop() {
 func (ic *IRCClient) Disconnect(quitmsg string) {
 	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.conn.Flush()
-	ic.conn.Quit()	// Shouldn't be needed, as server closes connection
+	ic.conn.Quit() // Shouldn't be needed, as server closes connection
 }

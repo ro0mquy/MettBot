@@ -8,10 +8,10 @@ import (
 )
 
 type BasicProtocol struct {
-	ic *IRCClient
-	timer *time.Timer
+	ic       *IRCClient
+	timer    *time.Timer
 	lastping int64
-	done chan bool
+	done     chan bool
 }
 
 func (bp *BasicProtocol) Register(cl *IRCClient) {
@@ -26,14 +26,14 @@ func (bp *BasicProtocol) Register(cl *IRCClient) {
 				return
 			default:
 			}
-			time.Sleep(1e9)		// TODO
+			time.Sleep(1e9) // TODO
 			if bp.lastping != 0 {
 				continue
 			}
 			bp.lastping = time.Seconds()
 			bp.ic.conn.Output <- "PING :client\n"
-			bp.timer = time.NewTimer(5e9)	// TODO
-			go func(){
+			bp.timer = time.NewTimer(5e9) // TODO
+			go func() {
 				select {
 				case _ = <-bp.timer.C:
 					bp.ic.Disconnect("(Client) timer expired")
