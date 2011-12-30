@@ -1,4 +1,4 @@
-package ircmsg
+package ircclient
 
 import (
 	"strings"

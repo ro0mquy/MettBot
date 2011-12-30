@@ -1,4 +1,4 @@
-package ircconn
+package ircclient
 
 import (
 	"net"
@@ -10,7 +10,7 @@ import (
 type IRCConn struct {
 	conn *net.TCPConn
 	bio  *bufio.ReadWriter
-	tmgr *ThrottleMgr
+	tmgr *ThrottleIrcu
 	done chan bool
 
 	Output chan string
@@ -18,7 +18,7 @@ type IRCConn struct {
 }
 
 func NewIRCConn() *IRCConn {
-	return &IRCConn{done: make(chan bool), Output: make(chan string), Input: make(chan string), tmgr: new(ThrottleMgr)}
+	return &IRCConn{done: make(chan bool), Output: make(chan string), Input: make(chan string), tmgr: new(ThrottleIrcu)}
 }
 
 func (ic *IRCConn) Connect(hostport string) os.Error {

@@ -1,4 +1,4 @@
-package ircconn
+package ircclient
 
 // Implement Undernet ircu's throttling algorithm here
 
@@ -7,17 +7,17 @@ import (
 	"fmt"
 )
 
-type ThrottleMgr struct {
+type ThrottleIrcu struct {
 	lastsent int64
 	tscounter int64
 }
 
-func NewThrottleMgr() *ThrottleMgr {
+func NewThrottleIrcu() *ThrottleIrcu {
 	// Could be handy later
-	return &ThrottleMgr{lastsent: time.Seconds(), tscounter: time.Seconds()}
+	return &ThrottleIrcu{lastsent: time.Seconds(), tscounter: time.Seconds()}
 }
 
-func (tm *ThrottleMgr) WaitSend(line string) {
+func (tm *ThrottleIrcu) WaitSend(line string) {
 	tm.lastsent = time.Seconds()
 	if(tm.lastsent > tm.tscounter) {
 		tm.tscounter = time.Seconds()
