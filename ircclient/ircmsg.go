@@ -65,7 +65,7 @@ func ParseServerLine(line string) *IRCMessage {
 
 	if len(line) == 0 || strings.Trim(line, " \t\n\r") == "" {
 		log.Println("ParseIrcLine: empty line")
-		return im
+		return nil
 	}
 
 	// source and target

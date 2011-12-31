@@ -5,6 +5,7 @@ import (
 	"os"
 	"log"
 	"bufio"
+	"strings"
 )
 
 type IRCConn struct {
@@ -13,15 +14,17 @@ type IRCConn struct {
 	tmgr *ThrottleIrcu
 	done chan bool
 
+	Err    chan os.Error
 	Output chan string
 	Input  chan string
 }
 
 func NewIRCConn() *IRCConn {
-	return &IRCConn{done: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(ThrottleIrcu)}
+	return &IRCConn{done: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(ThrottleIrcu), Err: make(chan os.Error, 5)}
 }
 
 func (ic *IRCConn) Connect(hostport string) os.Error {
+	ic.conn.SetTimeout(1)
 	if len(hostport) == 0 {
 		return os.NewError("empty server addr, not connecting")
 	}
@@ -45,11 +48,12 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 					ic.done <- d
 					return
 				default:
-					log.Printf("Can't read from input channel: " + err.String())
+					ic.Err <- os.NewError("ircmessage: receive: " + err.String())
+					ic.Quit()
 					return
 				}
 			}
-			s = s[:len(s)-2]
+			s = strings.Trim(s, "\r\n")
 			ic.Input <- s
 			log.Println("<< " + s)
 		}
@@ -58,11 +62,13 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 		for {
 			select {
 			case s := <-ic.Output:
-				s = s + "\n"
+				s = s + "\r\n"
 				ic.tmgr.WaitSend(s)
 				log.Print(">> " + s)
 				if _, err = ic.bio.WriteString(s); err != nil {
-					log.Printf("Can't write to output channel: " + err.String())
+					ic.Err <- os.NewError("ircmessage: send: " + err.String())
+					log.Println("Send failed. Exiting")
+					ic.Quit()
 					return
 				}
 				ic.bio.Flush()
@@ -86,5 +92,7 @@ func (ic *IRCConn) Flush() {
 
 func (ic *IRCConn) Quit() {
 	ic.conn.Close()
+	close(ic.Output)
+	close(ic.Input)
 	ic.done <- true
 }

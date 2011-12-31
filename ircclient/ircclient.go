@@ -46,8 +46,15 @@ func (ic *IRCClient) Connect() os.Error {
 	ic.conn.Output <- "USER " + ic.conf["ident"] + " * Q :" + ic.conf["rname"]
 	nick := ic.conf["nick"]
 	for {
-		s := ParseServerLine(<-ic.conn.Input)
-		// TODO error handling
+		line, ok := <-ic.conn.Input
+		if !ok {
+			return <-ic.conn.Err
+		}
+		s := ParseServerLine(line)
+		if s == nil {
+			// Ignore empty lines
+			continue
+		}
 		for _, p := range ic.plugins {
 			p.ProcessLine(s)
 		}
@@ -61,21 +68,30 @@ func (ic *IRCClient) Connect() os.Error {
 			return nil
 		}
 	}
-	return nil // Never happens
+	return nil
 }
 
-func (ic *IRCClient) InputLoop() {
+func (ic *IRCClient) InputLoop() os.Error {
 	for {
-		s := ParseServerLine(<-ic.conn.Input)
-		// TODO error handling
+		in, ok := <-ic.conn.Input
+		if !ok {
+			return <-ic.conn.Err
+		}
+
+		s:= ParseServerLine(in)
+		if s == nil {
+			continue
+		}
+
 		for _, p := range ic.plugins {
 			go p.ProcessLine(s)
 		}
 	}
+	panic("This never happens")
 }
 
 func (ic *IRCClient) Disconnect(quitmsg string) {
 	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.conn.Flush()
-	ic.conn.Quit() // Shouldn't be needed, as server closes connection
+	ic.conn.Quit()
 }

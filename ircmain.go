@@ -2,6 +2,7 @@ package main
 
 import (
 	"ircclient"
+	"log"
 //	"time"
 )
 
@@ -42,8 +43,14 @@ func main() {
 	//	ircclient.ParseServerLine(line)
 	//}
 	s := ircclient.NewIRCClient("localhost:6667", "testbot", "testbot", "ident")
-	s.Connect()
-	s.InputLoop()
+	ok := s.Connect()
+	if ok != nil {
+		log.Fatal(ok.String())
+	}
+	ok = s.InputLoop()
+	if ok != nil {
+		log.Fatal(ok.String())
+	}
 	//s.Output <- "Hello, world\n"
 	//s.Output <- "Asdf!\n"
 	//s.Quit()
