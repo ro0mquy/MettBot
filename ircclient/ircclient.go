@@ -2,13 +2,14 @@ package ircclient
 
 import (
 	"os"
+	"fmt"
 )
 
 type IRCClient struct {
 	conn *IRCConn
 	// TODO better config format
 	conf    map[string]string
-	plugins map[string]Plugin
+	Plugins map[string]Plugin
 }
 
 func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient {
@@ -17,22 +18,22 @@ func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient 
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
 	c.conf["ident"] = ident
-	c.conf["trigger"] = string(trigger) // XXX
+	c.conf["trigger"] = fmt.Sprintf("%c", trigger)
 	c.RegisterPlugin(&BasicProtocol{})
 	return c
 }
 
 func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
-	if _, ok := ic.plugins[p.String()]; ok == true {
+	if _, ok := ic.Plugins[p.String()]; ok == true {
 		return os.NewError("Plugin already exists")
 	}
 	p.Register(ic)
-	ic.plugins[p.String()] = p
+	ic.Plugins[p.String()] = p
 	return nil
 }
 
 func (ic IRCClient) GetPlugins() map[string]Plugin {
-	return ic.plugins
+	return ic.Plugins
 }
 
 func (ic *IRCClient) Connect() os.Error {
@@ -59,7 +60,7 @@ func (ic *IRCClient) Connect() os.Error {
 		if s == nil {
 			continue
 		}
-		for _, p := range ic.plugins {
+		for _, p := range ic.Plugins {
 			go p.ProcessLine(s)
 		}
 
@@ -92,7 +93,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 		}
 	}
 
-	for _, p := range ic.plugins {
+	for _, p := range ic.Plugins {
 		go p.ProcessLine(s)
 		if c != nil {
 			go p.ProcessCommand(c)
@@ -115,6 +116,7 @@ func (ic *IRCClient) Disconnect(quitmsg string) {
 	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.conn.Flush()
 	ic.conn.Quit()
+	ic.Shutdown()
 }
 
 func (ic *IRCClient) GetConfOpt(option string) string {
@@ -123,4 +125,16 @@ func (ic *IRCClient) GetConfOpt(option string) string {
 
 func (ic *IRCClient) SetConfOpt(option string) {
 	ic.conf[option] = option
+}
+
+func (ic *IRCClient) SendLine(line string) {
+	ic.conn.Output <- line
+}
+
+func (ic *IRCClient) Shutdown() {
+	// TODO: Unregister all plugins
+}
+
+func (ic *IRCClient) GetNick() string {
+	return ic.conf["nick"]
 }

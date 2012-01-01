@@ -4,6 +4,7 @@ package plugins
 // and the locks on it.
 
 import (
+	"strings"
 	"sync"
 	"ircclient"
 	"github.com/kless/goconfig/config"
@@ -37,7 +38,23 @@ func (cp *ConfigPlugin) Info() string {
 	return "run-time configuration manager plugin"
 }
 func (cp *ConfigPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	// TODO
+	// Proof of concept implementation
+	var target string
+	if cmd.Target != cp.ic.GetNick() {
+		target = cmd.Target
+	} else {
+		target = strings.SplitN(cmd.Source, "!", 2)[0]
+	}
+	switch cmd.Command {
+	case "listplugins":
+		cp.ic.SendLine("PRIVMSG " + target + " :List of installed plugins:")
+		for _, mod := range cp.ic.Plugins {
+			cp.ic.SendLine("PRIVMSG " + target + " :" + mod.String() + " - " + mod.Info())
+		}
+		cp.ic.SendLine("PRIVMSG " + target + " :-- end of list")
+	case "version":
+		cp.ic.SendLine("PRIVMSG " + target + " :This is go-faui2k11, version 0.01a")
+	}
 }
 
 func (cp *ConfigPlugin) Lock() {

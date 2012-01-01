@@ -67,7 +67,7 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 				log.Print(">> " + s)
 				if _, err = ic.bio.WriteString(s); err != nil {
 					ic.Err <- os.NewError("ircmessage: send: " + err.String())
-					log.Println("Send failed. Exiting")
+					log.Println("Send failed: " + err.String())
 					ic.Quit()
 					return
 				}
@@ -92,7 +92,11 @@ func (ic *IRCConn) Flush() {
 
 func (ic *IRCConn) Quit() {
 	ic.conn.Close()
-	close(ic.Output)
+	//close(ic.Output)
+	//_, x, y, _ := runtime.Caller(1)
+	//log.Println(x)
+	//log.Println(y)
+	//log.Println("Closing channel")
 	close(ic.Input)
 	ic.done <- true
 }

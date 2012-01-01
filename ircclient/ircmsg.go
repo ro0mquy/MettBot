@@ -16,6 +16,7 @@ type IRCMessage struct {
 type IRCCommand struct {
 	Source  string
 	Command string
+	Target  string
 	Args    []string
 }
 
@@ -27,7 +28,7 @@ func ParseCommand(msg *IRCMessage) *IRCCommand {
 	}
 
 	toParse := msg.Args[0]
-	ret := &IRCCommand{"", "", make([]string, 0)}
+	ret := &IRCCommand{msg.Source, "", msg.Target, make([]string, 0)}
 	for i, last, matchP := 0, 0, false; i < len(toParse); i++ {
 		//log.Printf("Now at: %c\n", toParse[i])
 
@@ -64,7 +65,6 @@ func ParseCommand(msg *IRCMessage) *IRCCommand {
 		lastByte = toParse[i]
 	}
 	//log.Printf("%#v\n", ret.Args)
-	ret.Source = msg.Source
 	if len(ret.Args) > 0 {
 		ret.Command = ret.Args[0]
 		ret.Args = ret.Args[1:len(ret.Args)]

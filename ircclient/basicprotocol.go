@@ -26,13 +26,13 @@ func (bp *BasicProtocol) Register(cl *IRCClient) {
 				return
 			default:
 			}
-			time.Sleep(5e9) // TODO
+			time.Sleep(120e9) // TODO
 			if bp.lastping != 0 {
 				continue
 			}
 			bp.lastping = time.Seconds()
 			bp.ic.conn.Output <- "PING :client"
-			bp.timer = time.NewTimer(5e9) // TODO
+			bp.timer = time.NewTimer(60e9) // TODO
 			go func() {
 				select {
 				case _ = <-bp.timer.C:
