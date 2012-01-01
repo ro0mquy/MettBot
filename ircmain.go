@@ -3,6 +3,7 @@ package main
 import (
 	"ircclient"
 	"log"
+	"plugins"
 	"github.com/kless/goconfig/config"
 )
 
@@ -40,6 +41,7 @@ func main() {
 	}
 
 	s := ircclient.NewIRCClient(options["host"], options["nick"], options["realname"], options["ident"], trigger)
+	s.RegisterPlugin(plugins.NewConfigPlugin(c))
 	ok = s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())
@@ -48,19 +50,4 @@ func main() {
 	if ok != nil {
 		log.Fatal(ok.String())
 	}
-	//s.Output <- "Hello, world\n"
-	//s.Output <- "Asdf!\n"
-	//s.Quit()
-	//	go output_channel(serverData)
-	//	for {
-	//		fmt.Scanln(st)
-	//		clientInput <- st
-	//	}
-}
-
-func output_channel(c <-chan string) {
-	//	for {
-	//		s := <- c
-	//		fmt.Println("-> " + s)
-	//	}
 }
