@@ -26,7 +26,7 @@ func (bp *BasicProtocol) Register(cl *IRCClient) {
 				return
 			default:
 			}
-			time.Sleep(1e9) // TODO
+			time.Sleep(5e9) // TODO
 			if bp.lastping != 0 {
 				continue
 			}

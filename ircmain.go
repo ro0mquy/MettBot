@@ -42,7 +42,7 @@ func main() {
 	//for _, line := range server_lines {
 	//	ircclient.ParseServerLine(line)
 	//}
-	s := ircclient.NewIRCClient("localhost:6667", "testbot", "testbot", "ident")
+	s := ircclient.NewIRCClient("dpaulus.dyndns.org:6667", "testbot", "testbot", "ident", '.')
 	ok := s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())
