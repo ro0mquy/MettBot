@@ -85,14 +85,23 @@ func ParseServerLine(line string) *IRCMessage {
 	// source and target
 	if line[0] == ':' {
 		parts := strings.SplitN(line[1:], " ", 4) // 4: src cmd target rest
-		im.Source = parts[0]
-		im.Command = parts[1]
-		im.Target = parts[2]
-		// cut them off
-		if len(parts) > 3 {
+		line = "" // if there is something left of the line, it will
+				  // be added in case 4:
+		switch len(parts) {
+		case 4:
 			line = parts[3]
-		} else {
-			line = ""
+			fallthrough
+		case 3:
+			im.Target = parts[2]
+			fallthrough
+		case 2:
+			im.Command = parts[1]
+			fallthrough
+		case 1:
+			im.Source = parts[0]
+		default:
+			log.Printf("len(parts)=%d, ignoring", len(parts))
+			return nil
 		}
 	} else {
 		parts := strings.SplitN(line, " ", 2) // cmd, rest
