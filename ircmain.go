@@ -36,13 +36,14 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	if len(strigger) > 1 {
+	if len(strigger) != 1 {
 		log.Fatal("Trigger must be exactly one byte long")
 	}
 	trigger = strigger[0]
 
 	s := ircclient.NewIRCClient(options["host"], options["nick"], options["realname"], options["ident"], trigger)
 	s.RegisterPlugin(plugins.NewConfigPlugin(c))
+	s.RegisterPlugin(new(plugins.ListPlugins))
 	ok = s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())

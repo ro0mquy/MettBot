@@ -38,8 +38,8 @@ func (lp ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
 	}
 
 	a := make([]string, 0)
-	for name, _ := range lp.ic.GetPlugins() {
-		a= append(a, name)
+	for plug := range lp.ic.IterPlugins() {
+		a = append(a, plug.String())
 	}
 
 	// channel vs. query

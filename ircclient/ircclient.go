@@ -6,14 +6,13 @@ import (
 )
 
 type IRCClient struct {
-	conn *IRCConn
-	// TODO better config format
+	conn    *IRCConn
 	conf    map[string]string
-	Plugins map[string]Plugin
+	plugins *pluginStack
 }
 
 func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient {
-	c := &IRCClient{nil, make(map[string]string), make(map[string]Plugin)}
+	c := &IRCClient{nil, make(map[string]string), NewPluginStack()}
 	c.conf["nick"] = nick
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
@@ -24,16 +23,12 @@ func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient 
 }
 
 func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
-	if _, ok := ic.Plugins[p.String()]; ok == true {
+	if _, ok := ic.plugins.GetPlugin(p.String()); ok == true {
 		return os.NewError("Plugin already exists")
 	}
 	p.Register(ic)
-	ic.Plugins[p.String()] = p
+	ic.plugins.Push(p)
 	return nil
-}
-
-func (ic IRCClient) GetPlugins() map[string]Plugin {
-	return ic.Plugins
 }
 
 func (ic *IRCClient) Connect() os.Error {
@@ -60,7 +55,7 @@ func (ic *IRCClient) Connect() os.Error {
 		if s == nil {
 			continue
 		}
-		for _, p := range ic.Plugins {
+		for p := range ic.plugins.Iter() {
 			go p.ProcessLine(s)
 		}
 
@@ -93,7 +88,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 		}
 	}
 
-	for _, p := range ic.Plugins {
+	for p := range ic.plugins.Iter() {
 		go p.ProcessLine(s)
 		if c != nil {
 			go p.ProcessCommand(c)
@@ -114,9 +109,9 @@ func (ic *IRCClient) InputLoop() os.Error {
 
 func (ic *IRCClient) Disconnect(quitmsg string) {
 	ic.conn.Output <- "QUIT :" + quitmsg
+	ic.Shutdown()
 	ic.conn.Flush()
 	ic.conn.Quit()
-	ic.Shutdown()
 }
 
 func (ic *IRCClient) GetConfOpt(option string) string {
@@ -132,9 +127,20 @@ func (ic *IRCClient) SendLine(line string) {
 }
 
 func (ic *IRCClient) Shutdown() {
-	// TODO: Unregister all plugins
+	for ic.plugins.Size() != 0 {
+		p := ic.plugins.Pop()
+		p.Unregister()
+	}
 }
 
 func (ic *IRCClient) GetNick() string {
 	return ic.conf["nick"]
+}
+
+func (ic *IRCClient) IterPlugins() <-chan Plugin {
+	return ic.plugins.Iter()
+}
+
+func (ic *IRCClient) GetPlugin(name string) (Plugin, bool) {
+	return ic.plugins.GetPlugin(name)
 }

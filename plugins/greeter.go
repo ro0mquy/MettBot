@@ -29,7 +29,7 @@ func (g *Greeter) ProcessLine(msg *ircclient.IRCMessage) {
 		return
 	}
 	just_nick := strings.SplitN(msg.Source, "!", 2)[0]
-	c, exists := g.ic.GetPlugins()["config"]
+	c, exists := g.ic.GetPlugin("config")
 	if !exists {
 		log.Println("plugin \"config\" doesn't exist")
 		return
