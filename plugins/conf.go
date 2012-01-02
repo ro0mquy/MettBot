@@ -46,12 +46,6 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		target = strings.SplitN(cmd.Source, "!", 2)[0]
 	}
 	switch cmd.Command {
-	case "listplugins":
-		cp.ic.SendLine("PRIVMSG " + target + " :List of installed plugins:")
-		for mod := range cp.ic.IterPlugins() {
-			cp.ic.SendLine("PRIVMSG " + target + " :" + mod.String() + " - " + mod.Info())
-		}
-		cp.ic.SendLine("PRIVMSG " + target + " :-- end of list")
 	case "version":
 		cp.ic.SendLine("PRIVMSG " + target + " :This is go-faui2k11, version 0.01a")
 	case "quit":
