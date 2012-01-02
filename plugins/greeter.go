@@ -4,6 +4,7 @@ import (
 	"ircclient"
 	"fmt"
 	"log"
+	"strings"
 )
 
 type Greeter struct {
@@ -27,8 +28,23 @@ func (g *Greeter) ProcessLine(msg *ircclient.IRCMessage) {
 	if msg.Command != "JOIN" { // TODO: numeric command
 		return
 	}
-	ret := fmt.Sprintf("PRIVMSG %s hi %s", msg.Target, msg.Source)
-	log.Println("greeter ret: " + ret)
+	just_nick := strings.SplitN(msg.Source, "!", 2)[0]
+	c, exists := g.ic.GetPlugins()["config"]
+	if !exists {
+		log.Println("plugin \"config\" doesn't exist")
+		return
+	}
+	conf, _ := c.(*ConfigPlugin)
+	conf.Lock() // muss ich bei read-only garned, oder?
+	our_nick, _ := conf.Conf.String("Server", "nick")
+	conf.Unlock()
+
+	if just_nick == our_nick { // don't welcome ourselves
+		log.Println("o: " + our_nick + ", j: " + just_nick)
+		return
+	}
+	ret := fmt.Sprintf("PRIVMSG %s :hi %s", msg.Target, just_nick)
+	//log.Println("greeter ret: " + ret)
 	g.ic.SendLine(ret)
 }
 
