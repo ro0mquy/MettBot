@@ -17,6 +17,7 @@ func main() {
 		c.AddOption("Server", "ident", "ident")
 		c.AddOption("Server", "realname", "TestBot Client")
 		c.AddOption("Server", "trigger", ".")
+		c.AddSection("Auth")
 		c.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 default config file")
 		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
 		return
@@ -44,6 +45,8 @@ func main() {
 	s := ircclient.NewIRCClient(options["host"], options["nick"], options["realname"], options["ident"], trigger)
 	s.RegisterPlugin(plugins.NewConfigPlugin(c))
 	s.RegisterPlugin(new(plugins.ListPlugins))
+	s.RegisterPlugin(new(plugins.AuthPlugin))
+	s.RegisterPlugin(plugins.NewLoggerPlugin("irclogs"))
 	ok = s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())

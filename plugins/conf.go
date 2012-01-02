@@ -31,7 +31,7 @@ func (cp *ConfigPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 func (cp *ConfigPlugin) Unregister() {
 	cp.lock.Lock()
-	cp.Conf.WriteFile("go-faui2k11", 0644, "go-faui2k11 config")
+	cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")
 	cp.lock.Unlock()
 }
 func (cp *ConfigPlugin) Info() string {

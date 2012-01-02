@@ -3,6 +3,7 @@ package ircclient
 import (
 	"os"
 	"fmt"
+	"strings"
 )
 
 type IRCClient struct {
@@ -143,4 +144,14 @@ func (ic *IRCClient) IterPlugins() <-chan Plugin {
 
 func (ic *IRCClient) GetPlugin(name string) (Plugin, bool) {
 	return ic.plugins.GetPlugin(name)
+}
+
+func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
+	var target string
+	if cmd.Target != ic.GetNick() {
+		target = cmd.Target
+	} else {
+		target = strings.SplitN(cmd.Source, "!", 2)[0]
+	}
+	ic.SendLine("PRIVMSG " + target + " :" + message)
 }
