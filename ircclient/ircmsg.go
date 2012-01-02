@@ -68,8 +68,7 @@ func ParseCommand(msg *IRCMessage) *IRCCommand {
 	if len(ret.Args) > 0 {
 		ret.Command = ret.Args[0]
 		ret.Args = ret.Args[1:len(ret.Args)]
-	}
-	if len(ret.Args) > 1 {
+	} else if len(ret.Args) > 1 {
 		ret.Args = ret.Args[1:len(ret.Args)]
 	}
 	return ret
