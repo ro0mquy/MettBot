@@ -21,7 +21,7 @@ type IRCConn struct {
 }
 
 func NewIRCConn() *IRCConn {
-	return &IRCConn{done: make(chan bool), flushed: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(ThrottleIrcu), Err: make(chan os.Error, 5)}
+	return &IRCConn{done: make(chan bool, 1), flushed: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(ThrottleIrcu), Err: make(chan os.Error, 5)}
 }
 
 func (ic *IRCConn) Connect(hostport string) os.Error {
