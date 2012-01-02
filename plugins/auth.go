@@ -64,10 +64,25 @@ func (a *AuthPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		if level < newlevel || level < 400 {
 			a.ic.Reply(cmd, "You are not authorized to do this")
 		}
+		if _, err := regexp.Compile(cmd.Args[0]); err != nil {
+			a.ic.Reply(cmd, "Error: Unable to compile regexp: " + err.String())
+			return
+		}
 		a.confplugin.Lock()
 		a.confplugin.Conf.AddOption("Auth", cmd.Args[0], fmt.Sprintf("%d", newlevel))
 		a.confplugin.Unlock()
 		a.ic.Reply(cmd, "Permissions granted")
+	case "delaccess":
+		if len(cmd.Args) != 1 {
+			a.ic.Reply(cmd, "delaccess takes mask to delete as an argument")
+			return
+		}
+		success := a.confplugin.Conf.RemoveOption("Auth", cmd.Args[0])
+		if success {
+			a.ic.Reply(cmd, "Successfully removed mask")
+		} else {
+			a.ic.Reply(cmd, "Mask not found")
+		}
 	}
 }
 func (a *AuthPlugin) GetAccessLevel(host string) int {
