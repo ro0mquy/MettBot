@@ -52,7 +52,6 @@ func (a *AuthPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		slevel := fmt.Sprintf("%d", level)
 		a.ic.Reply(cmd, "Your access level is: " + slevel)
 	case "addaccess":
-		fmt.Printf("%#v\n", cmd.Args)
 		if len(cmd.Args) != 2 {
 			a.ic.Reply(cmd, "addaccess takes two arguments: mask and access level")
 			return
@@ -76,7 +75,6 @@ func (a *AuthPlugin) GetAccessLevel(host string) int {
 	options, _ := a.confplugin.Conf.Options("Auth")
 	maxaccess := 0
 	for _, mask := range options {
-		fmt.Println(mask)
 		if match, _ := regexp.MatchString(mask, host); match == true {
 			newaccess, _ := a.confplugin.Conf.Int("Auth", mask)
 			if newaccess > maxaccess {
