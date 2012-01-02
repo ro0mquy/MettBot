@@ -63,6 +63,7 @@ func (a *AuthPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		}
 		if level < newlevel || level < 400 {
 			a.ic.Reply(cmd, "You are not authorized to do this")
+			return
 		}
 		if _, err := regexp.Compile(cmd.Args[0]); err != nil {
 			a.ic.Reply(cmd, "Error: Unable to compile regexp: " + err.String())
@@ -77,8 +78,14 @@ func (a *AuthPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 			a.ic.Reply(cmd, "delaccess takes mask to delete as an argument")
 			return
 		}
-		success := a.confplugin.Conf.RemoveOption("Auth", cmd.Args[0])
-		if success {
+		level := a.GetAccessLevel(cmd.Source)
+		dlevel, success := a.confplugin.Conf.Int("Auth", cmd.Args[0])
+		if success == nil {
+			if dlevel >= level || level != 500 {
+				a.ic.Reply(cmd, "Can't remove mask: Has higher privileges than you")
+				return
+			}
+			a.confplugin.Conf.RemoveOption("Auth", cmd.Args[0])
 			a.ic.Reply(cmd, "Successfully removed mask")
 		} else {
 			a.ic.Reply(cmd, "Mask not found")
