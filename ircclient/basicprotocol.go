@@ -21,12 +21,12 @@ func (bp *BasicProtocol) Register(cl *IRCClient) {
 	// server connection
 	go func() {
 		for {
+			sleep := time.NewTimer(120e9)
 			select {
 			case _ = <-bp.done:
 				return
-			default:
+			case _ = <-sleep.C:
 			}
-			time.Sleep(120e9) // TODO
 			if bp.lastping != 0 {
 				continue
 			}

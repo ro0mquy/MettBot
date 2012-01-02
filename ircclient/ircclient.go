@@ -6,13 +6,14 @@ import (
 )
 
 type IRCClient struct {
-	conn    *IRCConn
-	conf    map[string]string
-	plugins *pluginStack
+	conn       *IRCConn
+	conf       map[string]string
+	plugins    *pluginStack
+	disconnect chan bool
 }
 
 func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient {
-	c := &IRCClient{nil, make(map[string]string), NewPluginStack()}
+	c := &IRCClient{nil, make(map[string]string), NewPluginStack(), make(chan bool)}
 	c.conf["nick"] = nick
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
@@ -108,9 +109,8 @@ func (ic *IRCClient) InputLoop() os.Error {
 }
 
 func (ic *IRCClient) Disconnect(quitmsg string) {
-	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.Shutdown()
-	ic.conn.Flush()
+	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.conn.Quit()
 }
 

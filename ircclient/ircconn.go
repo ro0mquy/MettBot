@@ -9,10 +9,11 @@ import (
 )
 
 type IRCConn struct {
-	conn *net.TCPConn
-	bio  *bufio.ReadWriter
-	tmgr *ThrottleIrcu
-	done chan bool
+	conn    *net.TCPConn
+	bio     *bufio.ReadWriter
+	tmgr    *ThrottleIrcu
+	done    chan bool
+	flushed chan bool
 
 	Err    chan os.Error
 	Output chan string
@@ -20,7 +21,7 @@ type IRCConn struct {
 }
 
 func NewIRCConn() *IRCConn {
-	return &IRCConn{done: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(ThrottleIrcu), Err: make(chan os.Error, 5)}
+	return &IRCConn{done: make(chan bool), flushed: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(ThrottleIrcu), Err: make(chan os.Error, 5)}
 }
 
 func (ic *IRCConn) Connect(hostport string) os.Error {
@@ -39,8 +40,9 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 	ic.bio = bufio.NewReadWriter(bufio.NewReader(ic.conn), bufio.NewWriter(ic.conn))
 
 	go func() {
+		// This goroutine is responsible for doing blocking reads on the input socket 
+		// and forwarding them to the application
 		for {
-			// TODO: err
 			s, err := ic.bio.ReadString('\n')
 			if err != nil {
 				select {
@@ -59,6 +61,8 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 		}
 	}()
 	go func() {
+		// This goroutine is responsible for sending the output waiting in channel
+		// ic.Output to the server
 		for {
 			select {
 			case s := <-ic.Output:
@@ -73,9 +77,24 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 				}
 				ic.bio.Flush()
 			case d := <-ic.done:
+				// Connection is going to close, flush all data
 				ic.done <- d
-				if d {
-					return
+				for {
+					select {
+					case s := <-ic.Output:
+						s = s + "\r\n"
+						ic.tmgr.WaitSend(s)
+						log.Print(">> " + s)
+						// Do no more error handling here
+						if _, err = ic.bio.WriteString(s); err != nil {
+							return
+						}
+						ic.bio.Flush()
+					default:
+						ic.flushed <- true
+						// No more data to send
+						return
+					}
 				}
 			}
 		}
@@ -84,19 +103,15 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 	return nil
 }
 
-func (ic *IRCConn) Flush() {
-	// TODO implement
-	// Should block until all data to server has been sent
-	// and bufio flushed
-}
-
 func (ic *IRCConn) Quit() {
-	ic.conn.Close()
-	//close(ic.Output)
-	//_, x, y, _ := runtime.Caller(1)
-	//log.Println(x)
-	//log.Println(y)
-	//log.Println("Closing channel")
-	close(ic.Input)
 	ic.done <- true
+
+	// Wait until all sends have completed
+	select {
+	case _ = <-ic.flushed:
+	}
+
+	close(ic.Input)
+	ic.conn.Close()
+	ic.Err <- os.NewError("Connection closed by user")
 }
