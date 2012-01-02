@@ -87,6 +87,7 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 						log.Print(">> " + s)
 						// Do no more error handling here
 						if _, err = ic.bio.WriteString(s); err != nil {
+							ic.flushed <- true
 							return
 						}
 						ic.bio.Flush()
