@@ -5,17 +5,18 @@ import (
 	"time"
 	"container/list"
 	"json"
-	"log"
 	"sync"
+	"fmt"
 )
 
 type LecturePlugin struct {
 	ic            *ircclient.IRCClient
 	confplugin    *ConfigPlugin
+	authplugin    *AuthPlugin
 	notifications *list.List
-	done chan bool
-	update chan bool
-	lock sync.Mutex
+	done          chan bool
+	update        chan bool
+	lock          sync.Mutex
 }
 
 type notification struct {
@@ -57,17 +58,24 @@ func (l *LecturePlugin) fillNotificationList() {
 			panic("LecturePlugin: Unable to parse time \"" + lecture.Time + "\" in config: " + err.String())
 		}
 
+		// BUG: Fix 00:00..00:00+delay
+		save1, save2, save3 := timertime.Hour, timertime.Minute, timertime.Second
+		*timertime = *curtime
+		timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
+		fmt.Println("Registered lecture (2)")
+
+		// TODO: Make this configurable
+		timertime = time.SecondsToLocalTime(timertime.Seconds() - (60))
+
 		// Only consider notifications for the current day
 		if timertime.Weekday != curtime.Weekday {
 			continue
 		}
-		save1, save2, save3 := timertime.Hour, timertime.Minute, timertime.Second
-		*timertime = *curtime
-		timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
+		fmt.Println("Registered lecture (3)")
 		// Notify 15 minutes before lecture
-		// XXX - magic constant
-		if timertime.Seconds()-(10*60) >= curtime.Seconds() {
-			l.notifications.PushFront(notification{timertime.Seconds() - (10 * 60), lecture})
+		if timertime.Seconds() >= curtime.Seconds() {
+			fmt.Println("Registered lecture")
+			l.notifications.PushFront(notification{timertime.Seconds(), lecture})
 		}
 	}
 }
@@ -84,15 +92,20 @@ func (l *LecturePlugin) untilNextDay() int64 {
 func (l *LecturePlugin) sendNotifications() {
 	for {
 		var nextNotification int64 = time.Seconds() + (24 * 3600)
+		li := list.New()
 		l.lock.Lock()
 		for e := l.notifications.Front(); e != nil; e = e.Next() {
 			notify := e.Value.(notification)
 			entry := notify.entry
 			if notify.when <= time.Seconds() {
 				l.ic.SendLine("PRIVMSG " + entry.Channel + " :inb4 (" + entry.Time + "): \"" + entry.LongName + "\" (" + entry.Name + ") bei " + entry.Academic + ", Ort: " + entry.Venue)
+				li.PushFront(e)
 			} else if nextNotification > notify.when {
 				nextNotification = notify.when
 			}
+		}
+		for e := li.Front(); e != nil; e = e.Next() {
+			li.Remove(e.Value.(*list.Element))
 		}
 		l.lock.Unlock()
 		select {
@@ -114,10 +127,15 @@ func (l *LecturePlugin) Register(cl *ircclient.IRCClient) {
 		panic("LecturePlugin: Register: Unable to get configuration manager plugin")
 	}
 	l.confplugin, _ = plugin.(*ConfigPlugin)
+	authplugin, ok := l.ic.GetPlugin("auth")
+	if !ok {
+		panic("LecturePlugin: Register: Unable to get authorization plugin")
+	}
+	l.authplugin, _ = authplugin.(*AuthPlugin)
 	if !l.confplugin.Conf.HasSection("Lectures") {
-		l.confplugin.Conf.AddSection("Lectures")
-		test := &configEntry{"AuD", "Mon 13:15", "#go-faui2k11", "Algorithmen und Datenstrukturen", "Brinda", "H11"}
-		js, _ := json.Marshal(test)
+		//l.confplugin.Conf.AddSection("Lectures")
+		//test := &configEntry{"AuD", "Mon 13:15", "#go-faui2k11", "Algorithmen und Datenstrukturen", "Brinda", "H11"}
+		//js, _ := json.Marshal(test)
 		l.confplugin.Conf.AddOption("Lectures", test.Name, string(js))
 	}
 	l.done = make(chan bool)
@@ -138,10 +156,35 @@ func (l *LecturePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	// TODO: Lecture registration
+	if cmd.Command != "reglecture" && cmd.Command != "dellecture" {
+		return
+	}
+	if l.authplugin.GetAccessLevel(cmd.Source) < 300 {
+		l.ic.Reply(cmd, "You are not authorized to do that")
+		return
+	}
+	switch cmd.Command {
+	case "reglecture":
+		if len(cmd.Args) != 6 {
+			l.ic.Reply(cmd, "reglesson takes exactly 6 arguments:")
+			l.ic.Reply(cmd, "Syntax: reglesson NAME TIME CHANNEL LONGNAME ACADEMIC VENUE")
+			l.ic.Reply(cmd, "Example: reglesson AuD \"Mon 13:15\" #faui2k11 \"Algorithmen und Datenstrukturen\" Brinda H11")
+			return
+		}
+		lecture := configEntry{cmd.Args[0], cmd.Args[1], cmd.Args[2], cmd.Args[3], cmd.Args[4], cmd.Args[5]}
+		jlecture, _ := json.Marshal(lecture)
+		l.confplugin.Lock()
+		l.confplugin.Conf.AddOption("Lectures", fmt.Sprintf("%d", time.Seconds()), string(jlecture))
+		l.confplugin.Unlock()
+		l.ic.Reply(cmd, "Lecture added.")
+		l.fillNotificationList()
+		l.update <- true
+
+	case "dellecture":
+		// TODO
+	}
 }
 
 func (l *LecturePlugin) Unregister() {
 	l.done <- true
-	// TODO: Write config
 }
