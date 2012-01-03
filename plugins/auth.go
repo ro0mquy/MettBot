@@ -79,6 +79,8 @@ func (a *AuthPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 			return
 		}
 		level := a.GetAccessLevel(cmd.Source)
+		a.confplugin.Lock()
+		defer a.confplugin.Unlock()
 		dlevel, success := a.confplugin.Conf.Int("Auth", cmd.Args[0])
 		if success == nil {
 			if dlevel >= level || level != 500 {
