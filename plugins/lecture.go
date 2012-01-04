@@ -58,21 +58,19 @@ func (l *LecturePlugin) fillNotificationList() {
 			panic("LecturePlugin: Unable to parse time \"" + lecture.Time + "\" in config: " + err.String())
 		}
 
-		// BUG: Fix 00:00..00:00+delay
-		save1, save2, save3 := timertime.Hour, timertime.Minute, timertime.Second
-		*timertime = *curtime
-		timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
-		fmt.Println("Registered lecture (2)")
-
-		// TODO: Make this configurable
-		timertime = time.SecondsToLocalTime(timertime.Seconds() - (60))
-
 		// Only consider notifications for the current day
+		// TODO: Notifications for next day should also be considered
+		// if necessary (because we send notifications ~10minutes
+		// before the lecture starts)
 		if timertime.Weekday != curtime.Weekday {
 			continue
 		}
-		fmt.Println("Registered lecture (3)")
-		// Notify 15 minutes before lecture
+
+		save1, save2, save3 := timertime.Hour, timertime.Minute, timertime.Second
+		*timertime = *curtime
+		timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
+		// TODO: Make this configurable
+		timertime = time.SecondsToLocalTime(timertime.Seconds() - (60))
 		if timertime.Seconds() >= curtime.Seconds() {
 			fmt.Println("Registered lecture")
 			l.notifications.PushFront(notification{timertime.Seconds(), lecture})
@@ -92,6 +90,8 @@ func (l *LecturePlugin) untilNextDay() int64 {
 func (l *LecturePlugin) sendNotifications() {
 	for {
 		var nextNotification int64 = time.Seconds() + (24 * 3600)
+		// List contains the element we sent notifications for,
+		// so we can remove them in the second loop.
 		li := list.New()
 		l.lock.Lock()
 		for e := l.notifications.Front(); e != nil; e = e.Next() {
