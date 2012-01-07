@@ -134,9 +134,9 @@ func (l *LecturePlugin) Register(cl *ircclient.IRCClient) {
 	l.authplugin, _ = authplugin.(*AuthPlugin)
 	if !l.confplugin.Conf.HasSection("Lectures") {
 		l.confplugin.Conf.AddSection("Lectures")
-		test := &configEntry{"AuD", "Mon 13:15", "#go-faui2k11", "Algorithmen und Datenstrukturen", "Brinda", "H11"}
-		js, _ := json.Marshal(test)
-		l.confplugin.Conf.AddOption("Lectures", test.Name, string(js))
+	   // test := &configEntry{"AuD", "Mon 13:15", "#go-faui2k11", "Algorithmen und Datenstrukturen", "Brinda", "H11"}
+	   // js, _ := json.Marshal(test)
+	   // l.confplugin.Conf.AddOption("Lectures", test.Name, string(js))
 	}
 	l.done = make(chan bool)
 	l.update = make(chan bool)
