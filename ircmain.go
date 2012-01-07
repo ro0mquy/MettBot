@@ -48,6 +48,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.AuthPlugin))
 	s.RegisterPlugin(plugins.NewLoggerPlugin("irclogs"))
 	s.RegisterPlugin(new(plugins.LecturePlugin))
+	s.RegisterPlugin(new(plugins.QuitHandler))
 	ok = s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())

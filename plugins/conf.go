@@ -48,8 +48,6 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	switch cmd.Command {
 	case "version":
 		cp.ic.SendLine("PRIVMSG " + target + " :This is go-faui2k11, version 0.01a")
-	case "quit":
-		cp.ic.Disconnect("Bye")
 	}
 }
 
