@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-type ThrottleIrcu struct {
+type throttleIrcu struct {
 	lastsent  int64
 	tscounter int64
 }
 
-func NewThrottleIrcu() *ThrottleIrcu {
+func newthrottleIrcu() *throttleIrcu {
 	// Could be handy later
-	return &ThrottleIrcu{lastsent: time.Seconds(), tscounter: time.Seconds()}
+	return &throttleIrcu{lastsent: time.Seconds(), tscounter: time.Seconds()}
 }
 
-func (tm *ThrottleIrcu) WaitSend(line string) {
+func (tm *throttleIrcu) WaitSend(line string) {
 	tm.lastsent = time.Seconds()
 	if tm.lastsent > tm.tscounter {
 		tm.tscounter = time.Seconds()

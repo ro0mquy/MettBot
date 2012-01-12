@@ -14,13 +14,13 @@ type IRCClient struct {
 }
 
 func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient {
-	c := &IRCClient{nil, make(map[string]string), NewPluginStack(), make(chan bool)}
+	c := &IRCClient{nil, make(map[string]string), newPluginStack(), make(chan bool)}
 	c.conf["nick"] = nick
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
 	c.conf["ident"] = ident
 	c.conf["trigger"] = fmt.Sprintf("%c", trigger)
-	c.RegisterPlugin(&BasicProtocol{})
+	c.RegisterPlugin(&basicProtocol{})
 	return c
 }
 

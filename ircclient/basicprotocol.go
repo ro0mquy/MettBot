@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-type BasicProtocol struct {
+type basicProtocol struct {
 	ic       *IRCClient
 	timer    *time.Timer
 	lastping int64
 	done     chan bool
 }
 
-func (bp *BasicProtocol) Register(cl *IRCClient) {
+func (bp *basicProtocol) Register(cl *IRCClient) {
 	bp.ic = cl
 	bp.done = make(chan bool)
 	// Send a PING message every few minutes to detect locked-up
@@ -42,10 +42,10 @@ func (bp *BasicProtocol) Register(cl *IRCClient) {
 		}
 	}()
 }
-func (bp *BasicProtocol) String() string {
+func (bp *basicProtocol) String() string {
 	return "basic"
 }
-func (bp *BasicProtocol) ProcessLine(msg *IRCMessage) {
+func (bp *basicProtocol) ProcessLine(msg *IRCMessage) {
 	switch msg.Command {
 	case "PING":
 		if len(msg.Args) != 1 {
@@ -57,14 +57,14 @@ func (bp *BasicProtocol) ProcessLine(msg *IRCMessage) {
 		bp.timer.Stop()
 	}
 }
-func (bp *BasicProtocol) Unregister() {
+func (bp *basicProtocol) Unregister() {
 	bp.done <- true
 }
 
-func (bp *BasicProtocol) Info() string {
+func (bp *basicProtocol) Info() string {
 	return "basic irc protocol (e.g. PING), implemented as plugin."
 }
 
-func (bp *BasicProtocol) ProcessCommand(cmd *IRCCommand) {
+func (bp *basicProtocol) ProcessCommand(cmd *IRCCommand) {
 	// TODO
 }

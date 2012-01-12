@@ -8,7 +8,7 @@ type pluginStack struct {
 	list  *list.List
 }
 
-func NewPluginStack() *pluginStack {
+func newPluginStack() *pluginStack {
 	return &pluginStack{list.New()}
 }
 
