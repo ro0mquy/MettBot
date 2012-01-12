@@ -1,12 +1,14 @@
 package plugins
 
 import (
+	"os"
 	"ircclient"
 	"time"
 	"container/list"
 	"json"
 	"sync"
 	"fmt"
+	"log"
 )
 
 type LecturePlugin struct {
@@ -33,6 +35,25 @@ type configEntry struct {
 	Venue    string // H11
 }
 
+func nextAt(date string) (int64, os.Error) {
+	timertime, err := time.Parse("Mon 15:04", date)
+	if err != nil {
+		return 0, err
+	}
+	curtime := time.LocalTime()
+
+	weekday := timertime.Weekday
+	save1, save2, save3 := timertime.Hour, timertime.Minute, timertime.Second
+	*timertime = *curtime
+	timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
+
+	for timertime.Weekday != weekday {
+		timertime = time.SecondsToLocalTime(timertime.Seconds() + (24 * 60 * 60))
+	}
+	log.Println("Lecture next at: " + string(timertime.Seconds()) + ", current: " + string(curtime.Seconds()))
+	return timertime.Seconds(), nil
+}
+
 // Fills the list of notifications with all lectures for 
 // the current day.
 func (l *LecturePlugin) fillNotificationList() {
@@ -43,7 +64,6 @@ func (l *LecturePlugin) fillNotificationList() {
 	defer l.lock.Unlock()
 	defer l.confplugin.Unlock()
 	options, _ := l.confplugin.Conf.Options("Lectures")
-	curtime := time.LocalTime()
 	for _, key := range options {
 		value, _ := l.confplugin.Conf.String("Lectures", key)
 		var lecture configEntry
@@ -53,32 +73,17 @@ func (l *LecturePlugin) fillNotificationList() {
 			panic("LecturePlugin: Invalid JSON for key " + key + " : " + err.String())
 		}
 
-		timertime, err := time.Parse("Mon 15:04", lecture.Time)
+		// TODO: Configurable
+		time, err := nextAt(lecture.Time)
 		if err != nil {
-			panic("LecturePlugin: Unable to parse time \"" + lecture.Time + "\" in config: " + err.String())
+			log.Printf("Unable to parse time value for lecture %s: %s\n", lecture.Name, err.String())
 		}
-
-		// Only consider notifications for the current day
-		// TODO: Notifications for next day should also be considered
-		// if necessary (because we send notifications ~10minutes
-		// before the lecture starts)
-		if timertime.Weekday != curtime.Weekday {
-			continue
-		}
-
-		save1, save2, save3 := timertime.Hour, timertime.Minute, timertime.Second
-		*timertime = *curtime
-		timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
-		// TODO: Make this configurable
-		timertime = time.SecondsToLocalTime(timertime.Seconds() - (60))
-		if timertime.Seconds() >= curtime.Seconds() {
-			fmt.Println("Registered lecture")
-			l.notifications.PushFront(notification{timertime.Seconds(), lecture})
-		}
+		l.notifications.PushFront(notification{time - 60, lecture})
 	}
 }
 
 // Gets seconds until beginning of next day
+/*
 func (l *LecturePlugin) untilNextDay() int64 {
 	t := time.LocalTime()
 	t.Hour, t.Minute, t.Second = 0, 0, 1
@@ -86,6 +91,7 @@ func (l *LecturePlugin) untilNextDay() int64 {
 	sec := t.Seconds() + (24 * 60 * 60)
 	return sec - time.Seconds()
 }
+*/
 
 func (l *LecturePlugin) sendNotifications() {
 	for {
@@ -111,8 +117,6 @@ func (l *LecturePlugin) sendNotifications() {
 		select {
 		case <-l.done:
 			return
-		case <-time.After(l.untilNextDay() * 1e9):
-			l.fillNotificationList()
 		case <-time.After((nextNotification - time.Seconds()) * 1e9):
 		case <-l.update:
 			// Send notifications and refresh timer
