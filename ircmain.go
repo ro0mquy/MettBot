@@ -4,24 +4,14 @@ import (
 	"ircclient"
 	"log"
 	"plugins"
-	"github.com/kless/goconfig/config"
 )
 
 func main() {
-	c, ok := config.ReadDefault("go-faui2k11.cfg")
-	if ok != nil {
-		c = config.NewDefault()
-		c.AddSection("Server")
-		c.AddOption("Server", "host", "dpaulus.dyndns.org:6667")
-		c.AddOption("Server", "nick", "testbot")
-		c.AddOption("Server", "ident", "ident")
-		c.AddOption("Server", "realname", "TestBot Client")
-		c.AddOption("Server", "trigger", ".")
-		c.AddSection("Auth")
-		c.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 default config file")
-		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
+	confplugin := plugins.NewConfigPlugin()
+	if confplugin == nil {
 		return
 	}
+	c := confplugin.Conf
 	options := make(map[string]string)
 	for _, x := range []string{"host", "nick", "ident", "realname"} {
 		it, err := c.String("Server", x)
@@ -43,13 +33,14 @@ func main() {
 	trigger = strigger[0]
 
 	s := ircclient.NewIRCClient(options["host"], options["nick"], options["realname"], options["ident"], trigger)
-	s.RegisterPlugin(plugins.NewConfigPlugin(c))
+	s.RegisterPlugin(confplugin)
 	s.RegisterPlugin(new(plugins.ListPlugins))
 	s.RegisterPlugin(new(plugins.AuthPlugin))
 	s.RegisterPlugin(plugins.NewLoggerPlugin("irclogs"))
 	s.RegisterPlugin(new(plugins.LecturePlugin))
 	s.RegisterPlugin(new(plugins.QuitHandler))
-	ok = s.Connect()
+	s.RegisterPlugin(new(plugins.QDevoicePlugin))
+	ok := s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())
 	}

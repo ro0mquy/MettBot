@@ -4,21 +4,36 @@ package plugins
 // and the locks on it.
 
 import (
-	"strings"
 	"sync"
 	"ircclient"
 	"github.com/kless/goconfig/config"
+	"log"
 )
 
 type ConfigPlugin struct {
-	ic       *ircclient.IRCClient
-	Conf     *config.Config
+	ic   *ircclient.IRCClient
+	filename string
+	Conf *config.Config
 	// Operations to the Config structure should be atomic
-	lock     *sync.Mutex
+	lock *sync.Mutex
 }
 
-func NewConfigPlugin(conf *config.Config) *ConfigPlugin {
-	return &ConfigPlugin{nil, conf, new(sync.Mutex)}
+func NewConfigPlugin() *ConfigPlugin {
+	c, ok := config.ReadDefault("go-faui2k11.cfg")
+	if ok != nil {
+		c = config.NewDefault()
+		c.AddSection("Server")
+		c.AddOption("Server", "host", "dpaulus.dyndns.org:6667")
+		c.AddOption("Server", "nick", "testbot")
+		c.AddOption("Server", "ident", "ident")
+		c.AddOption("Server", "realname", "TestBot Client")
+		c.AddOption("Server", "trigger", ".")
+		c.AddSection("Auth")
+		c.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 default config file")
+		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
+		return nil
+	}
+	return &ConfigPlugin{nil, "go-faui2k11.cfg", c, new(sync.Mutex)}
 }
 func (cp *ConfigPlugin) Register(cl *ircclient.IRCClient) {
 	cp.ic = cl
@@ -38,16 +53,25 @@ func (cp *ConfigPlugin) Info() string {
 	return "run-time configuration manager plugin"
 }
 func (cp *ConfigPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	// Proof of concept implementation
-	var target string
-	if cmd.Target != cp.ic.GetNick() {
-		target = cmd.Target
-	} else {
-		target = strings.SplitN(cmd.Source, "!", 2)[0]
-	}
 	switch cmd.Command {
 	case "version":
-		cp.ic.SendLine("PRIVMSG " + target + " :This is go-faui2k11, version 0.01a")
+		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.01a")
+	case "writeconf":
+		authplugin, ok := cp.ic.GetPlugin("auth")
+		if !ok {
+			cp.ic.Reply(cmd, "Sorry, no authentication plugin loaded")
+			return
+		}
+		auth := authplugin.(*AuthPlugin)
+		if auth.GetAccessLevel(cmd.Source) < 400 {
+			cp.ic.Reply(cmd, "You are not authorized to do that")
+			return
+		}
+		cp.lock.Lock()
+		cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")
+		cp.Conf, _ = config.ReadDefault(cp.filename)
+		cp.lock.Unlock()
+		cp.ic.Reply(cmd, "Successfully flushed cached config entries")
 	}
 }
 
