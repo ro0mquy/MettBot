@@ -39,6 +39,7 @@ func main() {
 	s.RegisterPlugin(plugins.NewLoggerPlugin("irclogs"))
 	s.RegisterPlugin(new(plugins.LecturePlugin))
 	s.RegisterPlugin(new(plugins.QuitHandler))
+	s.RegisterPlugin(new(plugins.QDevoicePlugin))
 	ok := s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())

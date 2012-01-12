@@ -1,19 +1,17 @@
 package plugins
 
-
 import (
+	"strings"
 	"ircclient"
 	"fmt"
-	"log"
 )
-
 
 type QDevoicePlugin struct {
 	ic *ircclient.IRCClient
 }
 
 func (q *QDevoicePlugin) Register(cl *ircclient.IRCClient) {
-	q.ic= cl
+	q.ic = cl
 }
 
 func (q *QDevoicePlugin) String() string {
@@ -25,19 +23,17 @@ func (q *QDevoicePlugin) Info() string {
 }
 
 func (q *QDevoicePlugin) ProcessLine(msg *ircclient.IRCMessage) {
-	return
+	if strings.Index(msg.Source, "cl-faui2k9") == 0 && msg.Command == "MODE" &&
+		msg.Args[0] == "+v" && len(msg.Args) > 1 {
+		line := fmt.Sprintf("MODE %s -v :%s", msg.Target, msg.Args[1])
+		q.ic.SendLine(line)
+	}
 }
 
 func (q *QDevoicePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	if cmd.Source == "cl-faui2k9" && cmd.Command == "MODE" &&
-	   cmd.Args[0] == "+v" && len(cmd.Args) > 1 {
-		   line := fmt.Sprintf("MODE %s -v :%s", cmd.Target, cmd.Args[1])
-		   log.Println("devoice: " + line)
-		   q.ic.SendLine(line)
-	   }
+	return
 }
 
 func (q *QDevoicePlugin) Unregister() {
 	return
 }
-
