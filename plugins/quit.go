@@ -54,7 +54,8 @@ func (q *QuitHandler) ProcessCommand(cmd *ircclient.IRCCommand) {
 	}
 	lvl := q.auth.GetAccessLevel(cmd.Source)
 	q.config.Lock()
-	defer q.config.Unlock() // really easier over all those ifs...
+	// i'd love to defer unlock, but q.ic.Disconnect blocks if q.config is locked
+
 	if ! q.config.Conf.HasSection("Quit") {
 		log.Println("no \"Quit\" section.. adding one for your convenience")
 		q.config.Conf.AddSection("Quit")
@@ -70,22 +71,27 @@ func (q *QuitHandler) ProcessCommand(cmd *ircclient.IRCCommand) {
 	lvl_needed, err := q.config.Conf.Int("Quit", "quit_minlevel")
 	if err != nil {
 		q.ic.Reply(cmd, err.String())
+		q.config.Unlock()
+		return
 	}
 
 	if lvl_needed > lvl {
 		q.ic.Reply(cmd, "not authorized to quit this bot")
+		q.config.Unlock()
 		return
 	}
 
 	if ! q.config.Conf.HasOption("Quit", "quitmsg") {
 		log.Println("added default quitmsg value of \"" + default_quit_msg + "\" to config file")
 		q.config.Conf.AddOption("Quit", "quitmsg", default_quit_msg)
+		q.config.Unlock()
 		q.ic.Disconnect(default_quit_msg)
 	} else {
 		quitmsg, err := q.config.Conf.String("Quit", "quitmsg")
 		if err != nil {
 			q.ic.Reply(cmd, err.String())
 		}
+		q.config.Unlock()
 		q.ic.Disconnect(quitmsg)
 	}
 }
