@@ -1,3 +1,6 @@
+// Package ircclient provides the main interface for library users
+// It manages a single connection to the server and the associated
+// configuration and plugins.
 package ircclient
 
 import (
@@ -13,6 +16,9 @@ type IRCClient struct {
 	disconnect chan bool
 }
 
+// Returns a new IRCClient connection with the given configuration options.
+// It will not connect to the given server until Connect() has been called,
+// so you can register plugins before connecting
 func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient {
 	c := &IRCClient{nil, make(map[string]string), newPluginStack(), make(chan bool)}
 	c.conf["nick"] = nick
@@ -24,6 +30,9 @@ func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient 
 	return c
 }
 
+// Registers a new plugin. Plugins can be registered at any time, even before
+// the actual connection attempt. The plugin's Unregister() function will already
+// be called when the connection is lost.
 func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 	if _, ok := ic.plugins.GetPlugin(p.String()); ok == true {
 		return os.NewError("Plugin already exists")
@@ -33,6 +42,10 @@ func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 	return nil
 }
 
+// Connects to the server specified on object creation. If the chosen nickname is
+// already in use, it will automatically be suffixed with an single underscore until
+// an unused nickname is found. This function blocks until the connection attempt
+// has been finished.
 func (ic *IRCClient) Connect() os.Error {
 	ic.conn = NewIRCConn()
 	e := ic.conn.Connect(ic.conf["hostport"])
@@ -98,6 +111,9 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	}
 }
 
+// Starts the actual command processing. This function will block until the connection
+// has either been lost or Disconnect() has been called (by a plugin or by the library
+// user).
 func (ic *IRCClient) InputLoop() os.Error {
 	for {
 		in, ok := <-ic.conn.Input
@@ -109,43 +125,66 @@ func (ic *IRCClient) InputLoop() os.Error {
 	panic("This never happens")
 }
 
+// Disconnects from the server with the given quit message. All plugins wil be unregistered
+// and pending messages in queue (e.g. because of floodprotection) will be flushed. This will
+// also make InputLoop() return.
 func (ic *IRCClient) Disconnect(quitmsg string) {
-	ic.Shutdown()
+	ic.shutdown()
 	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.conn.Quit()
 }
 
+// Gets one of the configuration options supplied to the NewIRCClient() method. Valid config
+// options usually include:
+//  - nick
+//  - hostport (colon-seperated host and port to connect to)
+//  - rname (the real name)
+//  - ident
+//  - trigger
 func (ic *IRCClient) GetConfOpt(option string) string {
 	return ic.conf[option]
 }
 
+// Sets a configuration option (see also GetConfOpt())
 func (ic *IRCClient) SetConfOpt(option string) {
 	ic.conf[option] = option
 }
 
+// Dumps a raw line to the server socket. This is usually called by plugins, but may also
+// be used by the library user.
 func (ic *IRCClient) SendLine(line string) {
 	ic.conn.Output <- line
 }
 
-func (ic *IRCClient) Shutdown() {
+func (ic *IRCClient) shutdown() {
 	for ic.plugins.Size() != 0 {
 		p := ic.plugins.Pop()
 		p.Unregister()
 	}
 }
 
+// Gets the current nickname. Note: This is equivalent to a call to GetConfOpt("nick") and
+// might be removed in the future. Better use GetConfOpt() for this purpose
 func (ic *IRCClient) GetNick() string {
 	return ic.conf["nick"]
 }
 
+// Returns a channel on which all plugins will be sent. Use it to iterate over all registered
+// plugins.
 func (ic *IRCClient) IterPlugins() <-chan Plugin {
 	return ic.plugins.Iter()
 }
 
+// Get the pointer to a specific plugin that has been registered using RegisterPlugin()
+// Name is the name the plugin identifies itself with when String() is called on it.
 func (ic *IRCClient) GetPlugin(name string) (Plugin, bool) {
 	return ic.plugins.GetPlugin(name)
 }
 
+// Sends a reply to a parsed message from a user. This is mostly intended for plugins
+// and will automatically distinguish between channel and query messages. Note: Notice
+// replies will currently be sent to the client using PRIVMSG, this may change in the
+// future.
 func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 	var target string
 	if cmd.Target != ic.GetNick() {
