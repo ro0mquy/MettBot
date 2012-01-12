@@ -11,6 +11,8 @@ import (
 	"log"
 )
 
+const notifyBefore = 12 // TODO: config
+
 type LecturePlugin struct {
 	ic            *ircclient.IRCClient
 	confplugin    *ConfigPlugin
@@ -35,6 +37,7 @@ type configEntry struct {
 	Venue    string // H11
 }
 
+// Gets the _next_ time "date" matches, in seconds.
 func nextAt(date string) (int64, os.Error) {
 	timertime, err := time.Parse("Mon 15:04", date)
 	if err != nil {
@@ -42,27 +45,32 @@ func nextAt(date string) (int64, os.Error) {
 	}
 	curtime := time.LocalTime()
 
+	// XXX - This is still quite ugly. Any ideas
+	// on how to improve it?
 	weekday := timertime.Weekday
 	save1, save2, save3 := timertime.Hour, timertime.Minute, timertime.Second
 	*timertime = *curtime
 	timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
 
-	for timertime.Weekday != weekday {
+	for timertime.Weekday != weekday || timertime.Seconds() - curtime.Seconds() <= notifyBefore {
 		timertime = time.SecondsToLocalTime(timertime.Seconds() + (24 * 60 * 60))
 	}
-	log.Println("Lecture next at: " + string(timertime.Seconds()) + ", current: " + string(curtime.Seconds()))
 	return timertime.Seconds(), nil
 }
 
-// Fills the list of notifications with all lectures for 
-// the current day.
-func (l *LecturePlugin) fillNotificationList() {
+// Fills the list of notifications with all lectures and
+// the timestamp they take place
+// Returns: Time for next lecture, -1 if no lecture is registered
+func (l *LecturePlugin) fillNotificationList() int64 {
+	var retval int64 = -1
+
 	l.notifications = list.New()
 
 	l.confplugin.Lock()
 	l.lock.Lock()
-	defer l.lock.Unlock()
 	defer l.confplugin.Unlock()
+	defer l.lock.Unlock()
+
 	options, _ := l.confplugin.Conf.Options("Lectures")
 	for _, key := range options {
 		value, _ := l.confplugin.Conf.String("Lectures", key)
@@ -73,54 +81,52 @@ func (l *LecturePlugin) fillNotificationList() {
 			panic("LecturePlugin: Invalid JSON for key " + key + " : " + err.String())
 		}
 
-		// TODO: Configurable
 		time, err := nextAt(lecture.Time)
 		if err != nil {
 			log.Printf("Unable to parse time value for lecture %s: %s\n", lecture.Name, err.String())
+			continue
 		}
-		l.notifications.PushFront(notification{time - 60, lecture})
-	}
-}
+		notifyTime := time - notifyBefore
+		l.notifications.PushFront(notification{notifyTime, lecture})
 
-// Gets seconds until beginning of next day
-/*
-func (l *LecturePlugin) untilNextDay() int64 {
-	t := time.LocalTime()
-	t.Hour, t.Minute, t.Second = 0, 0, 1
-	// First second of new day
-	sec := t.Seconds() + (24 * 60 * 60)
-	return sec - time.Seconds()
+		if notifyTime < retval || retval == -1 {
+			retval = notifyTime
+		}
+	}
+
+	return retval
 }
-*/
 
 func (l *LecturePlugin) sendNotifications() {
 	for {
-		var nextNotification int64 = time.Seconds() + (24 * 3600)
-		// List contains the element we sent notifications for,
-		// so we can remove them in the second loop.
-		li := list.New()
+		// TODO: container/heap and selective re-adding or so.
+		// However, this should work for now...
+		nextNotification := l.fillNotificationList()
+		var timerChan <-chan int64
+		// If nextNotification is less than zero, just wait indefinitely on this chan
+		if nextNotification < 0 {
+			timerChan = make(chan int64)
+		} else {
+			timerChan = time.After((nextNotification - time.Seconds()) * 1e9)
+		}
+		select {
+		case <-l.done:
+			return
+		case <-timerChan:
+		case <-l.update:
+			// Send notifications and refresh timer
+		}
+
 		l.lock.Lock()
 		for e := l.notifications.Front(); e != nil; e = e.Next() {
 			notify := e.Value.(notification)
 			entry := notify.entry
+			log.Println("Trying")
 			if notify.when <= time.Seconds() {
 				l.ic.SendLine("PRIVMSG " + entry.Channel + " :inb4 (" + entry.Time + "): \"" + entry.LongName + "\" (" + entry.Name + ") bei " + entry.Academic + ", Ort: " + entry.Venue)
-				li.PushFront(e)
-			} else if nextNotification > notify.when {
-				nextNotification = notify.when
 			}
 		}
-		for e := li.Front(); e != nil; e = e.Next() {
-			li.Remove(e.Value.(*list.Element))
-		}
 		l.lock.Unlock()
-		select {
-		case <-l.done:
-			return
-		case <-time.After((nextNotification - time.Seconds()) * 1e9):
-		case <-l.update:
-			// Send notifications and refresh timer
-		}
 	}
 }
 
@@ -138,13 +144,9 @@ func (l *LecturePlugin) Register(cl *ircclient.IRCClient) {
 	l.authplugin, _ = authplugin.(*AuthPlugin)
 	if !l.confplugin.Conf.HasSection("Lectures") {
 		l.confplugin.Conf.AddSection("Lectures")
-	   // test := &configEntry{"AuD", "Mon 13:15", "#go-faui2k11", "Algorithmen und Datenstrukturen", "Brinda", "H11"}
-	   // js, _ := json.Marshal(test)
-	   // l.confplugin.Conf.AddOption("Lectures", test.Name, string(js))
 	}
 	l.done = make(chan bool)
 	l.update = make(chan bool)
-	l.fillNotificationList()
 	go l.sendNotifications()
 }
 
@@ -170,12 +172,17 @@ func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	switch cmd.Command {
 	case "reglecture":
 		if len(cmd.Args) != 6 {
-			l.ic.Reply(cmd, "reglesson takes exactly 6 arguments:")
-			l.ic.Reply(cmd, "Syntax: reglesson NAME TIME CHANNEL LONGNAME ACADEMIC VENUE")
-			l.ic.Reply(cmd, "Example: reglesson AuD \"Mon 13:15\" #faui2k11 \"Algorithmen und Datenstrukturen\" Brinda H11")
+			l.ic.Reply(cmd, "reglecture takes exactly 6 arguments:")
+			l.ic.Reply(cmd, "Syntax: reglecture NAME TIME CHANNEL LONGNAME ACADEMIC VENUE")
+			l.ic.Reply(cmd, "Example: reglecture AuD \"Mon 13:15\" #faui2k11 \"Algorithmen und Datenstrukturen\" Brinda H11")
 			return
 		}
 		lecture := configEntry{cmd.Args[0], cmd.Args[1], cmd.Args[2], cmd.Args[3], cmd.Args[4], cmd.Args[5]}
+		_, err := time.Parse("Mon 15:04", lecture.Time)
+		if err != nil {
+			l.ic.Reply(cmd, "Invalid date specified: " + err.String())
+			return
+		}
 		jlecture, _ := json.Marshal(lecture)
 		l.confplugin.Lock()
 		l.confplugin.Conf.AddOption("Lectures", fmt.Sprintf("%d", time.Seconds()), string(jlecture))
