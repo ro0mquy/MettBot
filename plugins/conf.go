@@ -72,6 +72,8 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		cp.Conf, _ = config.ReadDefault(cp.filename)
 		cp.lock.Unlock()
 		cp.ic.Reply(cmd, "Successfully flushed cached config entries")
+	case "source":
+		cp.ic.Reply(cmd, "source is (atm) at http://bitbucket.org/dpaulus/go-faui2k11")
 	}
 }
 
