@@ -1,0 +1,13 @@
+immer:
+* grep TODO */*.go
+
+0.02:
+* plugin-infrastruktur umbauen, list_commands
+* trigger: s/byte/unicode rune
+
+irgendwann:
+* nachfolge von !decide
+
+will_man_das?:
+* \google oder \lmgtfy
+* \say o.Ä
