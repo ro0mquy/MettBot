@@ -41,6 +41,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.QuitHandler))
 	s.RegisterPlugin(new(plugins.QDevoicePlugin))
 	s.RegisterPlugin(new(plugins.ChannelsPlugin))
+	s.RegisterPlugin(new(plugins.AdminPlugin))
 	ok := s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())
