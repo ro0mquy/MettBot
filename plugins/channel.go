@@ -47,7 +47,7 @@ func (q *ChannelsPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 
 func (q *ChannelsPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	// TODO: Delchannel
-	if cmd.Command != "addchannel" {
+	if cmd.Command != "addchannel" && cmd.Command != "join" && cmd.Command != "part" {
 		return
 	}
 	if q.authplugin.GetAccessLevel(cmd.Source) < 200 {
@@ -56,6 +56,14 @@ func (q *ChannelsPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	}
 	if len(cmd.Args) < 1 {
 		q.ic.Reply(cmd, "Too few parameters. Please specify a channel name.")
+		return
+	}
+	if cmd.Command == "join" {
+		q.ic.SendLine("JOIN #" + cmd.Args[0])
+		return
+	}
+	if cmd.Command == "part" {
+		q.ic.SendLine("PART #" + cmd.Args[0])
 		return
 	}
 	q.confplugin.Lock()
