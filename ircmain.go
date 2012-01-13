@@ -46,7 +46,7 @@ func main() {
 	if ok != nil {
 		log.Fatal(ok.String())
 	}
-	s.SendLine("JOIN #go-faui2k11") // For testing purposes
+	//s.SendLine("JOIN #go-faui2k11") // For testing purposes
 	ok = s.InputLoop()
 	if ok != nil {
 		log.Fatal(ok.String())

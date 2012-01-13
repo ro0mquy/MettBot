@@ -2,7 +2,6 @@ package ircclient
 
 import (
 	"strings"
-	"log"
 )
 
 type IRCMessage struct {
@@ -81,45 +80,40 @@ func ParseServerLine(line string) *IRCMessage {
 		return nil
 	}
 
-	// source and target
+	// Omit : at beginning of line
 	if line[0] == ':' {
-		parts := strings.SplitN(line[1:], " ", 4) // 4: src cmd target rest
-		line = "" // if there is something left of the line, it will
-				  // be added in case 4:
-		switch len(parts) {
-		case 4:
-			line = parts[3]
-			fallthrough
-		case 3:
-			im.Target = parts[2]
-			fallthrough
-		case 2:
-			im.Command = parts[1]
-			fallthrough
-		case 1:
-			im.Source = parts[0]
-		default:
-			log.Printf("len(parts)=%d, ignoring", len(parts))
-			return nil
+		line = line[1:]
+	}
+	// Split
+	var parts []string = make([]string, 0)
+	for {
+		if line[0] == ':' {
+			line = line[1:]	// Strip the :
+			parts = append(parts, line)
+			break
 		}
-	} else {
-		parts := strings.SplitN(line, " ", 2) // cmd, rest
-		im.Command = parts[0]
-		if len(parts) > 1 {
-			line = parts[1]
+		split := strings.SplitN(line, " ", 2)
+		parts = append(parts, split[0])
+		if len(split) == 2 && len(split[1]) > 0 {
+			line = split[1]
 		} else {
-			line = ""
+			break
 		}
 	}
 
-	args := strings.SplitN(line, ":", 2)
-	for _, a := range strings.Split(args[0], " ") {
-		if a != "" {
-			im.Args = append(im.Args, a)
+	if len(parts) <= 2 {
+		im.Command = parts[0]
+		if len(parts) == 2 {
+			im.Args = []string{parts[1]}
 		}
-	}
-	if len(args) > 1 {
-		im.Args = append(im.Args, args[1])
+	} else {
+		im.Source = parts[0]
+		im.Command = parts[1]
+		im.Target = parts[2]
+		if len(parts) >= 4 {
+			parts = parts[3:]
+			im.Args = parts
+		}
 	}
 
 	//log.Printf("im: %#v\n", im)
