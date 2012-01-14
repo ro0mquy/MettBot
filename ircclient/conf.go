@@ -14,7 +14,7 @@ type ConfigPlugin struct {
 	filename string
 	Conf     *config.Config
 	// Operations to the Config structure should be atomic
-	lock *sync.Mutex
+	lock sync.Mutex
 }
 
 func NewConfigPlugin(filename string) *ConfigPlugin {
@@ -32,7 +32,7 @@ func NewConfigPlugin(filename string) *ConfigPlugin {
 		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
 		return nil
 	}
-	return &ConfigPlugin{nil, filename, c, new(sync.Mutex)}
+	return &ConfigPlugin{filename: filename, Conf: c}
 }
 func (cp *ConfigPlugin) Register(cl *IRCClient) {
 	cp.ic = cl
