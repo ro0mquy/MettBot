@@ -2,7 +2,16 @@
 ## see http://code.google.com/p/go-gb/
 ## this Makefile only calls it apropriately
 
-GB = go-gb
+## find go-gb binary name..
+ifneq (,$(shell which go-gb))
+	GB = go-gb
+else
+	GB = gb
+endif
+
+GB_VERBOSE = -v
+
+GB += $(GB_VERBOSE)
 
 all: go-faui2k11
 
