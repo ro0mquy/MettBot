@@ -131,6 +131,8 @@ func (l *LecturePlugin) Register(cl *ircclient.IRCClient) {
 	l.done = make(chan bool)
 	l.update = make(chan bool)
 	go l.sendNotifications()
+	cl.RegisterCommandHandler("addlecture", 0, 300, l)
+	// TODO: dellecture
 }
 
 func (l *LecturePlugin) String() string {
@@ -145,13 +147,6 @@ func (l *LecturePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	if cmd.Command != "reglecture" && cmd.Command != "dellecture" {
-		return
-	}
-	if l.ic.GetAccessLevel(cmd.Source) < 300 {
-		l.ic.Reply(cmd, "You are not authorized to do that")
-		return
-	}
 	switch cmd.Command {
 	case "reglecture":
 		if len(cmd.Args) != 6 {
