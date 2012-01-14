@@ -3,7 +3,6 @@ package plugins
 import (
 	"ircclient"
 	"log"
-	"fmt"
 )
 
 const (
@@ -17,12 +16,6 @@ type QuitHandler struct {
 
 func (q *QuitHandler) Register(ic *ircclient.IRCClient) {
 	q.ic = ic
-
-	if q.ic.GetStringOption("Quit", "quit_minlevel") == "" {
-		q.ic.SetIntOption("Quit", "quit_minlevel", quit_min_auth_level)
-		log.Println("added default quit_minlevel value of \"" + fmt.Sprintf("%d", quit_min_auth_level) + "\" to config file")
-		// no return either, sorry ;)
-	}
 
 	if q.ic.GetStringOption("Quit", "quitmsg") == "" {
 		log.Println("added default quitmsg value of \"" + default_quit_msg + "\" to config file")

@@ -90,7 +90,7 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 	}
 }
 func (a *authPlugin) GetAccessLevel(host string) int {
-	a.confplugin.Lock()
+/*
 	options, _ := a.confplugin.Conf.Options("Auth")
 	maxaccess := 0
 	for _, mask := range options {
@@ -103,4 +103,6 @@ func (a *authPlugin) GetAccessLevel(host string) int {
 	}
 	defer a.confplugin.Unlock()
 	return maxaccess
+*/
+	return 500
 }

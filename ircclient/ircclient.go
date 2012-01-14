@@ -218,9 +218,12 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 		return
 	}
 	if handler, err := ic.handlers[c.Command]; err == true {
-		// TODO: Authorization level check
+		if ic.GetAccessLevel(c.Source) < handler.minaccess {
+			ic.Reply(c, "You are not authorized to do that.")
+			return
+		}
 		if len(c.Args) < handler.minparams {
-			ic.Reply(c, "This command requires at least "+fmt.Sprintf("%d", handler.minparams)+" parameters")
+			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.minparams)+" parameters")
 			return
 		}
 		go handler.handler.ProcessCommand(c)
