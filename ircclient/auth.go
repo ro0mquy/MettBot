@@ -60,7 +60,8 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 			a.ic.Reply(cmd, "Error: Unable to compile regexp: "+err.String())
 			return
 		}
-		a.ic.SetIntOption("Auth", cmd.Args[0], newlevel)
+		//a.ic.SetIntOption("Auth", cmd.Args[0], newlevel)
+		a.SetAccessLevel(cmd.Args[0], newlevel)
 		a.ic.Reply(cmd, "Permissions granted")
 	case "delaccess":
 		if len(cmd.Args) != 1 {
@@ -74,13 +75,23 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 				a.ic.Reply(cmd, "Can't remove mask: Has higher privileges than you")
 				return
 			}
-			a.ic.RemoveOption("Auth", cmd.Args[0])
+			//a.ic.RemoveOption("Auth", cmd.Args[0])
+			a.DelAccessLevel(cmd.Args[0])
 			a.ic.Reply(cmd, "Successfully removed mask")
 		} else {
 			a.ic.Reply(cmd, "Mask not found")
 		}
 	}
 }
+
+func (a *authPlugin) SetAccessLevel(host string, level int) {
+	a.ic.SetIntOption("Auth", host, level)
+}
+
+func (a *authPlugin) DelAccessLevel(mask string) {
+	a.ic.RemoveOption("Auth", mask)
+}
+
 func (a *authPlugin) GetAccessLevel(host string) int {
 	options := a.ic.GetOptions("Auth")
 	maxaccess := 0

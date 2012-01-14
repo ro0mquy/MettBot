@@ -143,16 +143,21 @@ func (ic *IRCClient) SetIntOption(section, option string, value int) {
 
 
 func (ic *IRCClient) GetAccessLevel(host string) int {
-	// TODO
-	return 0
+	a, _ := ic.GetPlugin("auth")
+	auth, _ := a.(*authPlugin)
+	return auth.GetAccessLevel(host)
 }
 
 func (ic *IRCClient) SetAccessLevel(host string, level int) {
-	// TODO
+	a, _ := ic.GetPlugin("auth")
+	auth, _ := a.(*authPlugin)
+	auth.SetAccessLevel(host, level )
 }
 
 func (ic *IRCClient) DelAccessLevel(host string) {
-	// TODO
+	a, _ := ic.GetPlugin("auth")
+	auth, _ := a.(*authPlugin)
+	auth.DelAccessLevel(host)
 }
 
 // Connects to the server specified on object creation. If the chosen nickname is
