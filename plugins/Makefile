@@ -1,14 +1,21 @@
-GOBUILD = gobuild
+## actually only a go-gb wrapper
+
+GB = go-gb
 
 all: plugins
 
-clean:
-	rm -rf *.o *.a *.[568vq] [568vq].out *.so _obj _test _testmain.go *.exe _cgo* test.out build.out
+
+plugins:
+	$(GB) .
 
 test:
-	@echo "to be implemented"
+	$(GB) -t .
 
-plugins: $(wildcard *.go)
-	make -C .. plugins
+nuke:
+	$(GB) -N .
 
-.PHONY:all test clean
+format:
+	$(GB) --gofmt .
+
+
+.PHONY: all plugins test nuke format
