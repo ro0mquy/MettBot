@@ -81,7 +81,13 @@ func (ic *IRCClient) SetStringOption(section, option, value string) {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
-	// TODO
+	if ! cf.Conf.HasSection(section) {
+		cf.Conf.AddSection(section)
+	}
+	if cf.Conf.HasOption(section, option) {
+		cf.Conf.DelOption(section, option)
+	}
+	cf.Conf.AddOption(section, option, value)
 	cf.Unlock()
 }
 func (ic *IRCClient) DelOption(section, option string) {
@@ -90,7 +96,15 @@ func (ic *IRCClient) DelOption(section, option string) {
 func (ic *IRCClient) GetOptions(section string) []string {
 	return nil
 }
-// TODO: SetIntOption...
+
+func (ic *IRCClient) GetIntOption(section, option string) int {
+	return 0
+}
+
+func (ic *IRCClient) SetIntOption(section, option string, value int) {
+	//
+}
+
 
 func (ic *IRCClient) GetAccessLevel(host string) int {
 	// TODO
