@@ -63,7 +63,7 @@ func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minac
 // options for section "Server" usually include:
 //  - nick
 //  - hostport (colon-seperated host and port to connect to)
-//  - rname (the real name)
+//  - realname (the real name)
 //  - ident
 //  - trigger
 func (ic *IRCClient) GetStringOption(section, option string) string {
@@ -116,7 +116,7 @@ func (ic *IRCClient) Connect() os.Error {
 		return e
 	}
 	ic.conn.Output <- "NICK " + ic.GetStringOption("Server", "nick")
-	ic.conn.Output <- "USER " + ic.GetStringOption("Server", "ident") + " * Q :" + ic.GetStringOption("Server", "rname")
+	ic.conn.Output <- "USER " + ic.GetStringOption("Server", "ident") + " * Q :" + ic.GetStringOption("Server", "realname")
 	nick := ic.GetStringOption("Server", "nick")
 	for {
 		line, ok := <-ic.conn.Input
