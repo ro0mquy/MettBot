@@ -11,7 +11,7 @@ import (
 )
 
 type IRCClient struct {
-	conn       *IRCConn
+	conn       *ircConn
 	plugins    *pluginStack
 	handlers   map[string]handler
 	disconnect chan bool
@@ -160,7 +160,7 @@ func (ic *IRCClient) DelAccessLevel(host string) {
 // an unused nickname is found. This function blocks until the connection attempt
 // has been finished.
 func (ic *IRCClient) Connect() os.Error {
-	ic.conn = NewIRCConn()
+	ic.conn = NewircConn()
 	e := ic.conn.Connect(ic.GetStringOption("Server", "host"))
 	if e != nil {
 		return e

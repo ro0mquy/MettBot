@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type IRCConn struct {
+type ircConn struct {
 	conn    *net.TCPConn
 	bio     *bufio.ReadWriter
 	tmgr    *throttleIrcu
@@ -20,11 +20,11 @@ type IRCConn struct {
 	Input  chan string
 }
 
-func NewIRCConn() *IRCConn {
-	return &IRCConn{done: make(chan bool, 1), flushed: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(throttleIrcu), Err: make(chan os.Error, 5)}
+func NewircConn() *ircConn {
+	return &ircConn{done: make(chan bool, 1), flushed: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(throttleIrcu), Err: make(chan os.Error, 5)}
 }
 
-func (ic *IRCConn) Connect(hostport string) os.Error {
+func (ic *ircConn) Connect(hostport string) os.Error {
 	ic.conn.SetTimeout(1)
 	if len(hostport) == 0 {
 		return os.NewError("empty server addr, not connecting")
@@ -104,7 +104,7 @@ func (ic *IRCConn) Connect(hostport string) os.Error {
 	return nil
 }
 
-func (ic *IRCConn) Quit() {
+func (ic *ircConn) Quit() {
 	ic.done <- true
 
 	// Wait until all sends have completed
