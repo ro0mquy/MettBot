@@ -7,7 +7,7 @@ import (
 )
 
 type authPlugin struct {
-	ic       *IRCClient
+	ic         *IRCClient
 	confplugin *ConfigPlugin
 }
 
@@ -40,11 +40,12 @@ func (a *authPlugin) Info() string {
 }
 func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 	switch cmd.Command {
-	case "myaccess": fallthrough
+	case "myaccess":
+		fallthrough
 	case "mya":
 		level := a.GetAccessLevel(cmd.Source)
 		slevel := fmt.Sprintf("%d", level)
-		a.ic.Reply(cmd, "Your access level is: " + slevel)
+		a.ic.Reply(cmd, "Your access level is: "+slevel)
 	case "addaccess":
 		if len(cmd.Args) != 2 {
 			a.ic.Reply(cmd, "addaccess takes two arguments: mask and access level")
@@ -53,14 +54,14 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 		level := a.GetAccessLevel(cmd.Source)
 		newlevel, err := strconv.Atoi(cmd.Args[1])
 		if err != nil {
-			a.ic.Reply(cmd, "Error: " + err.String())
+			a.ic.Reply(cmd, "Error: "+err.String())
 		}
 		if level < newlevel || level < 400 {
 			a.ic.Reply(cmd, "You are not authorized to do this")
 			return
 		}
 		if _, err := regexp.Compile(cmd.Args[0]); err != nil {
-			a.ic.Reply(cmd, "Error: Unable to compile regexp: " + err.String())
+			a.ic.Reply(cmd, "Error: Unable to compile regexp: "+err.String())
 			return
 		}
 		a.confplugin.Lock()

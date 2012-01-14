@@ -13,12 +13,12 @@ import (
 type IRCClient struct {
 	conn       *IRCConn
 	plugins    *pluginStack
-	handlers map[string]handler
+	handlers   map[string]handler
 	disconnect chan bool
 }
 
 type handler struct {
-	handler Plugin
+	handler   Plugin
 	minparams int
 	minaccess int
 }
@@ -178,7 +178,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	if handler, err := ic.handlers[c.Command]; err == true {
 		// TODO: Authorization level check
 		if len(c.Args) < handler.minparams {
-			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.minparams) + " parameters")
+			ic.Reply(c, "This command requires at least "+fmt.Sprintf("%d", handler.minparams)+" parameters")
 			return
 		}
 		go handler.handler.ProcessCommand(c)

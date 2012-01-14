@@ -12,7 +12,7 @@ type ListPlugins struct {
 }
 
 func (lp *ListPlugins) Register(ic *ircclient.IRCClient) {
-	lp.ic= ic
+	lp.ic = ic
 }
 
 func (lp ListPlugins) String() string {
@@ -22,7 +22,6 @@ func (lp ListPlugins) String() string {
 func (lp ListPlugins) Info() string {
 	return "Lists all currently registered Plugins"
 }
-
 
 func (lp ListPlugins) ProcessLine(msg *ircclient.IRCMessage) {
 	return
@@ -53,7 +52,6 @@ func (lp ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
 	log.Println("listplugins output: " + ret)
 	lp.ic.SendLine(ret)
 }
-
 
 func (lp ListPlugins) Unregister() {
 	// nothing to do here

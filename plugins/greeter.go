@@ -11,9 +11,8 @@ type Greeter struct {
 	ic *ircclient.IRCClient
 }
 
-
 func (g *Greeter) Register(ic *ircclient.IRCClient) {
-	g.ic= ic
+	g.ic = ic
 }
 
 func (g *Greeter) String() string {
@@ -55,4 +54,3 @@ func (g *Greeter) ProcessCommand(cmd *ircclient.IRCCommand) {
 func (g *Greeter) Unregister() {
 	// nothing to do here
 }
-

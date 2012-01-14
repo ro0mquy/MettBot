@@ -10,9 +10,9 @@ import (
 )
 
 type ConfigPlugin struct {
-	ic   *IRCClient
+	ic       *IRCClient
 	filename string
-	Conf *config.Config
+	Conf     *config.Config
 	// Operations to the Config structure should be atomic
 	lock *sync.Mutex
 }

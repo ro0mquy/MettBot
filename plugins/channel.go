@@ -5,7 +5,7 @@ import (
 )
 
 type ChannelsPlugin struct {
-	ic         *ircclient.IRCClient
+	ic *ircclient.IRCClient
 }
 
 func (q *ChannelsPlugin) Register(cl *ircclient.IRCClient) {

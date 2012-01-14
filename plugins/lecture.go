@@ -50,7 +50,7 @@ func nextAt(date string) (int64, os.Error) {
 	*timertime = *curtime
 	timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
 
-	for timertime.Weekday != weekday || timertime.Seconds() - curtime.Seconds() <= notifyBefore {
+	for timertime.Weekday != weekday || timertime.Seconds()-curtime.Seconds() <= notifyBefore {
 		timertime = time.SecondsToLocalTime(timertime.Seconds() + (24 * 60 * 60))
 	}
 	return timertime.Seconds(), nil
@@ -163,7 +163,7 @@ func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		lecture := configEntry{cmd.Args[0], cmd.Args[1], cmd.Args[2], cmd.Args[3], cmd.Args[4], cmd.Args[5]}
 		_, err := time.Parse("Mon 15:04", lecture.Time)
 		if err != nil {
-			l.ic.Reply(cmd, "Invalid date specified: " + err.String())
+			l.ic.Reply(cmd, "Invalid date specified: "+err.String())
 			return
 		}
 		jlecture, _ := json.Marshal(lecture)

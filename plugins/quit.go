@@ -15,11 +15,11 @@ const (
 )
 
 type QuitHandler struct {
-	ic     *ircclient.IRCClient
+	ic *ircclient.IRCClient
 }
 
 func (q *QuitHandler) Register(ic *ircclient.IRCClient) {
-	q.ic= ic
+	q.ic = ic
 }
 
 func (q *QuitHandler) String() string {
@@ -43,44 +43,44 @@ func (q *QuitHandler) ProcessCommand(cmd *ircclient.IRCCommand) {
 	_ = lvl
 	// TODO!
 	/*
-	if ! q.config.Conf.HasSection("Quit") {
-		log.Println("no \"Quit\" section.. adding one for your convenience")
-		q.config.Conf.AddSection("Quit")
-		// no return here so the next if does its job as well and we have a
-		// working default config after just one failed attempt
-	}
-	if ! q.config.Conf.HasOption("Quit", "quit_minlevel") {
-		q.config.Conf.AddOption("Quit", "quit_minlevel", quit_min_auth_level)
-		log.Println("added default quit_minlevel value of \"" + quit_min_auth_level + "\" to config file")
-		// no return here either, sorry ;)
-	}
+		if ! q.config.Conf.HasSection("Quit") {
+			log.Println("no \"Quit\" section.. adding one for your convenience")
+			q.config.Conf.AddSection("Quit")
+			// no return here so the next if does its job as well and we have a
+			// working default config after just one failed attempt
+		}
+		if ! q.config.Conf.HasOption("Quit", "quit_minlevel") {
+			q.config.Conf.AddOption("Quit", "quit_minlevel", quit_min_auth_level)
+			log.Println("added default quit_minlevel value of \"" + quit_min_auth_level + "\" to config file")
+			// no return here either, sorry ;)
+		}
 
-	lvl_needed, err := q.config.Conf.Int("Quit", "quit_minlevel")
-	if err != nil {
-		q.ic.Reply(cmd, err.String())
-		q.config.Unlock()
-		return
-	}
-
-	if lvl_needed > lvl {
-		q.ic.Reply(cmd, "not authorized to quit this bot")
-		q.config.Unlock()
-		return
-	}
-
-	if ! q.config.Conf.HasOption("Quit", "quitmsg") {
-		log.Println("added default quitmsg value of \"" + default_quit_msg + "\" to config file")
-		q.config.Conf.AddOption("Quit", "quitmsg", default_quit_msg)
-		q.config.Unlock()
-		q.ic.Disconnect(default_quit_msg)
-	} else {
-		quitmsg, err := q.config.Conf.String("Quit", "quitmsg")
+		lvl_needed, err := q.config.Conf.Int("Quit", "quit_minlevel")
 		if err != nil {
 			q.ic.Reply(cmd, err.String())
+			q.config.Unlock()
+			return
 		}
-		q.config.Unlock()
-		q.ic.Disconnect(quitmsg)
-	}
+
+		if lvl_needed > lvl {
+			q.ic.Reply(cmd, "not authorized to quit this bot")
+			q.config.Unlock()
+			return
+		}
+
+		if ! q.config.Conf.HasOption("Quit", "quitmsg") {
+			log.Println("added default quitmsg value of \"" + default_quit_msg + "\" to config file")
+			q.config.Conf.AddOption("Quit", "quitmsg", default_quit_msg)
+			q.config.Unlock()
+			q.ic.Disconnect(default_quit_msg)
+		} else {
+			quitmsg, err := q.config.Conf.String("Quit", "quitmsg")
+			if err != nil {
+				q.ic.Reply(cmd, err.String())
+			}
+			q.config.Unlock()
+			q.ic.Disconnect(quitmsg)
+		}
 	*/
 }
 

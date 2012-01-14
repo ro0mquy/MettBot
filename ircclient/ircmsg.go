@@ -88,7 +88,7 @@ func ParseServerLine(line string) *IRCMessage {
 	var parts []string = make([]string, 0)
 	for {
 		if line[0] == ':' {
-			line = line[1:]	// Strip the :
+			line = line[1:] // Strip the :
 			parts = append(parts, line)
 			break
 		}

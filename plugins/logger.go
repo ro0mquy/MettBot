@@ -18,7 +18,6 @@ func NewLoggerPlugin(_dir string) *LoggerPlugin {
 	return &LoggerPlugin{dir: _dir}
 }
 
-
 func make_sure_dir_exists(dirname string) os.Error {
 	finfo, err := os.Lstat(dirname)
 	if err != nil {
@@ -33,7 +32,7 @@ func make_sure_dir_exists(dirname string) os.Error {
 }
 
 func (l *LoggerPlugin) Register(ic *ircclient.IRCClient) {
-	l.ic= ic
+	l.ic = ic
 	// this is kind of an init function, let's check that stuff here
 	make_sure_dir_exists(l.dir)
 }
@@ -51,7 +50,7 @@ func (l *LoggerPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 }
 
 func write_string_to_file(filename, msg string) os.Error {
-	fp, err := os.OpenFile(filename, os.O_WRONLY | os.O_CREATE | os.O_APPEND, 0777)
+	fp, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		return err
 	}
@@ -68,14 +67,14 @@ func (l *LoggerPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if msg.Command == "PRIVMSG" {
 		var s string
 		if msg.Target[0] == '#' { // channel
-			s= msg.Target
+			s = msg.Target
 		} else { // query
-			s= msg.Source
+			s = msg.Source
 		}
 		host := strings.SplitN(l.ic.GetStringOption("Server", "hostport"), ":", 2)[0]
 		full_filename := l.dir + "/" + host + "_" + s
 		msg := fmt.Sprintf("%s | %s: %s\n", time.LocalTime().String(),
-			strings.SplitN(msg.Source, "!", 2)[0],  strings.Join(msg.Args, " "))
+			strings.SplitN(msg.Source, "!", 2)[0], strings.Join(msg.Args, " "))
 		if err := write_string_to_file(full_filename, msg); err != nil {
 			log.Println(err.String())
 		}
@@ -85,4 +84,3 @@ func (l *LoggerPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 func (l *LoggerPlugin) Unregister() {
 	return
 }
-

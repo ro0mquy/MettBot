@@ -5,7 +5,7 @@ import (
 )
 
 type pluginStack struct {
-	list  *list.List
+	list *list.List
 }
 
 func newPluginStack() *pluginStack {
