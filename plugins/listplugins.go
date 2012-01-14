@@ -13,6 +13,7 @@ type ListPlugins struct {
 
 func (lp *ListPlugins) Register(ic *ircclient.IRCClient) {
 	lp.ic = ic
+	ic.RegisterCommandHandler("listplugins", 0, 0, lp)
 }
 
 func (lp ListPlugins) String() string {
@@ -32,10 +33,6 @@ func (lp ListPlugins) ProcessLine(msg *ircclient.IRCMessage) {
  * because strings.Join() does that for us
  **/
 func (lp ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
-	if cmd.Command != "listplugins" {
-		return
-	}
-
 	a := make([]string, 0)
 	for plug := range lp.ic.IterPlugins() {
 		a = append(a, plug.String())

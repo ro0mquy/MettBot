@@ -11,6 +11,7 @@ type AdminPlugin struct {
 
 func (q *AdminPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
+	q.ic.RegisterCommandHandler("inviteme", 1, 400, q)
 }
 
 func (q *AdminPlugin) String() string {
@@ -32,14 +33,7 @@ func (q *AdminPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (q *AdminPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	if q.ic.GetAccessLevel(cmd.Source) < 400 {
-		// Don't send any error messages
-		return
-	}
-	if cmd.Command == "inviteme" && len(cmd.Args) == 1 {
-		q.ic.SendLine("INVITE " + strings.SplitN(cmd.Source, "!", 2)[0] + " " + cmd.Args[0])
-		return
-	}
+	q.ic.SendLine("INVITE " + strings.SplitN(cmd.Source, "!", 2)[0] + " " + cmd.Args[0])
 }
 
 func (q *AdminPlugin) Unregister() {
