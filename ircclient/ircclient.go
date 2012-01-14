@@ -92,7 +92,7 @@ func (ic *IRCClient) SetStringOption(section, option, value string) {
 	cf.Unlock()
 }
 
-func (ic *IRCClient) DelOption(section, option string) {
+func (ic *IRCClient) RemoveOption(section, option string) {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
@@ -130,7 +130,15 @@ func (ic *IRCClient) GetIntOption(section, option string) (int, os.Error) {
 }
 
 func (ic *IRCClient) SetIntOption(section, option string, value int) {
-	//
+	c, _ := ic.GetPlugin("conf")
+	cf, _ := c.(*ConfigPlugin)
+	cf.Lock()
+	defer cf.Unlock()
+	stropt := fmt.Sprintf("%d", value)
+	if ! cf.HasSection(section) {
+		cf.AddSection(section)
+	}
+	cf.AddOption(section, option, stropt)
 }
 
 
