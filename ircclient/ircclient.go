@@ -112,7 +112,7 @@ func (ic *IRCClient) GetOptions(section string) []string {
 	defer cf.Unlock()
 	opts, err := cf.Conf.Options(section)
 	if err != nil {
-		return []string{ "" }
+		return []string{}
 	}
 	return opts
 }
