@@ -94,7 +94,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	if s == nil {
 		return
 	}
-	if (s.Command == "PRIVMSG" || s.Command == "NOTICE") && (s.Target == ic.conf["nick"] || s.Args[0][0] == ic.conf["trigger"][0]) {
+	if (s.Command == "PRIVMSG" || s.Command == "NOTICE") && (s.Target == ic.conf["nick"] || string.Index(s.Args[0], ic.conf["trigger"]) == 0) {
 		c = ParseCommand(s)
 		// Strip trigger, if necessary
 		if c != nil && s.Target != ic.conf["nick"] && len(c.Command) != 0 {
