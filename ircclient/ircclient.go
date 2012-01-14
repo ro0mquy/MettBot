@@ -77,6 +77,7 @@ func (ic *IRCClient) GetStringOption(section, option string) string {
 	cf.Unlock()
 	return retval
 }
+
 func (ic *IRCClient) SetStringOption(section, option, value string) {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
@@ -85,20 +86,47 @@ func (ic *IRCClient) SetStringOption(section, option, value string) {
 		cf.Conf.AddSection(section)
 	}
 	if cf.Conf.HasOption(section, option) {
-		cf.Conf.DelOption(section, option)
+		cf.Conf.RemoveOption(section, option)
 	}
 	cf.Conf.AddOption(section, option, value)
 	cf.Unlock()
 }
+
 func (ic *IRCClient) DelOption(section, option string) {
-	// TODO
-}
-func (ic *IRCClient) GetOptions(section string) []string {
-	return nil
+	c, _ := ic.GetPlugin("conf")
+	cf, _ := c.(*ConfigPlugin)
+	cf.Lock()
+	defer cf.Unlock()
+
+	if ! cf.Conf.HasSection(section) {
+		// nothing to do
+		return
+	}
+	cf.Conf.RemoveOption(section, option)
 }
 
-func (ic *IRCClient) GetIntOption(section, option string) int {
-	return 0
+func (ic *IRCClient) GetOptions(section string) []string {
+	c, _ := ic.GetPlugin("conf")
+	cf, _ := c.(*ConfigPlugin)
+	cf.Lock()
+	defer cf.Unlock()
+	opts, err := cf.Conf.Options(section)
+	if err != nil {
+		return []string{ "" }
+	}
+	return opts
+}
+
+func (ic *IRCClient) GetIntOption(section, option string) (int, os.Error) {
+	c, _ := ic.GetPlugin("conf")
+	cf, _ := c.(*ConfigPlugin)
+	cf.Lock()
+	defer cf.Unlock()
+	v, err := cf.Conf.Int(section, option)
+	if err != nil {
+		return -1, err
+	}
+	return v, nil
 }
 
 func (ic *IRCClient) SetIntOption(section, option string, value int) {
