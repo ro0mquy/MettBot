@@ -1,48 +1,34 @@
-GOBUILD = gobuild
+## warning: you need go-gb, which does all the work
+## see http://code.google.com/p/go-gb/
+## this Makefile only calls it apropriately
 
-## subdirs is used for e.g. cleaning, testable_dirs lists only dirs
-## which have a *_test.go file
-SUBDIRS = ircclient plugins
-TESTABLE_DIRS = ircclient
+GB = go-gb
 
+all: go-faui2k11
 
+go-faui2k11:
+	$(GB) .
 
-## default is ircmain
-all: ircmain
-
-
-## the plugins
-plugins:
-	##make -C plugins
-	## geht im moment ned, komische include-pfad-sache
-	gobuild -I . -lib=true plugins
-
-## the ircclient library
-ircclient:
-	make -C ircclient
-
-## the whole bot
-#! wildcard: man könnte über alle SUBDIRS loopen und
-#! sachen zamsuchen, weil man hier auch unrelated-zeug mitnimmt
-ircmain: ircmain.go $(wildcard */*.go)
-	$(GOBUILD) $<
-
-## tests
-test:
-	@for dir in $(TESTABLE_DIRS) ; \
-	do \
-		pushd $${dir}; \
-		echo "== testing $${dir} =="; \
-		gotest; \
-		popd; \
-	done
-	
-
-
-## gobuild -clean=true fails
 clean:
-	rm -rf *.o *.a *.[568vq] [568vq].out *.so _obj _test _testmain.go *.exe _cgo* test.out build.out
-	## clean subdirs
-	@for dir in $(SUBDIRS); do make -C $${dir} clean; done
+	$(GB) -c .
 
-.PHONY: all test clean ircclient plugins
+nuke:
+	$(GB) -N .
+
+format:
+	$(GB) --gofmt .
+
+## these are only called by hand, actually go-gb does all the work
+plugins:
+	$(MAKE) -C plugins
+
+plugins_test:
+	$(MAKE) -C plugins test
+
+ircclient:
+	$(MAKE) -C ircclient
+
+ircclient_test:
+	$(MAKE) -C ircclient test
+
+.PHONY: all

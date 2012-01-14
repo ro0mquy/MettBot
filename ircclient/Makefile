@@ -1,12 +1,21 @@
-include $(GOROOT)/src/Make.inc
+## actually only a go-gb wrapper
 
-TARG=ircclient
-GOFILES=\
-	basicprotocol.go		\
-	ircclient.go			\
-	ircconn.go			\
-	ircmsg.go			\
-	plugin.go			\
-	stack.go			\
-	throttle-ircu.go
-include $(GOROOT)/src/Make.pkg
+GB = go-gb
+
+all: ircclient
+
+
+ircclient:
+	$(GB) .
+
+test:
+	$(GB) -t .
+
+nuke:
+	$(GB) -N .
+
+format:
+	$(GB) --gofmt .
+
+
+.PHONY: all ircclient test nuke format
