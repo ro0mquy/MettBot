@@ -3,7 +3,7 @@
 ## this Makefile only calls it apropriately
 
 ## find go-gb binary name..
-ifneq (,$(shell which go-gb))
+ifneq (,$(shell which go-gb 2>/dev/null))
 	GB = go-gb
 else
 	GB = gb
