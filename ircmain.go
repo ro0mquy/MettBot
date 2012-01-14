@@ -4,6 +4,7 @@ import (
 	"ircclient"
 	"log"
 	"plugins"
+	"utf8"
 )
 
 func main() {
@@ -21,16 +22,14 @@ func main() {
 		}
 		options[x] = it
 	}
-	var trigger byte
-	strigger, err := c.String("Server", "trigger")
+	trigger, err := c.String("Server", "trigger")
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	if len(strigger) != 1 {
-		log.Fatal("Trigger must be exactly one byte long")
+	if utf8.RuneCountInString(trigger) != 1 {
+		log.Fatal("Trigger must be exactly one unicode rune long")
 	}
-	trigger = strigger[0]
 
 	s := ircclient.NewIRCClient(options["host"], options["nick"], options["realname"], options["ident"], trigger)
 	s.RegisterPlugin(confplugin)

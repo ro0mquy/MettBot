@@ -5,7 +5,6 @@ package ircclient
 
 import (
 	"os"
-	"fmt"
 	"strings"
 )
 
@@ -19,13 +18,13 @@ type IRCClient struct {
 // Returns a new IRCClient connection with the given configuration options.
 // It will not connect to the given server until Connect() has been called,
 // so you can register plugins before connecting
-func NewIRCClient(hostport, nick, rname, ident string, trigger byte) *IRCClient {
+func NewIRCClient(hostport, nick, rname, ident string, trigger string) *IRCClient {
 	c := &IRCClient{nil, make(map[string]string), newPluginStack(), make(chan bool)}
 	c.conf["nick"] = nick
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
 	c.conf["ident"] = ident
-	c.conf["trigger"] = fmt.Sprintf("%c", trigger)
+	c.conf["trigger"] = trigger
 	c.RegisterPlugin(&basicProtocol{})
 	return c
 }
@@ -99,7 +98,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 		c = ParseCommand(s)
 		// Strip trigger, if necessary
 		if c != nil && s.Target != ic.conf["nick"] && len(c.Command) != 0 {
-			c.Command = c.Command[1:len(c.Command)]
+			c.Command = c.Command[len(ic.conf["trigger"]):len(c.Command)]
 		}
 	}
 
