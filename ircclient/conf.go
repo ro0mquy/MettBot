@@ -59,13 +59,6 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 	case "version":
 		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.01a")
 	case "writeconf":
-		authplugin, ok := cp.ic.GetPlugin("auth")
-		if !ok {
-			cp.ic.Reply(cmd, "Sorry, no authentication plugin loaded")
-			return
-		}
-		auth := authplugin.(*authPlugin)
-
 		cp.lock.Lock()
 		cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")
 		cp.Conf, _ = config.ReadDefault(cp.filename)
