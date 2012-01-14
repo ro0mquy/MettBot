@@ -31,6 +31,7 @@ func (a *AuthPlugin) Register(cl *ircclient.IRCClient) {
 			panic(err.String())
 		}
 	}
+	a.ic.RegisterCommandHandler("mya", 0, 0, a)
 }
 func (a *AuthPlugin) String() string {
 	return "auth"
