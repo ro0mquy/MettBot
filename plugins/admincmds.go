@@ -7,13 +7,10 @@ import (
 
 type AdminPlugin struct {
 	ic *ircclient.IRCClient
-	authplugin *AuthPlugin
 }
 
 func (q *AdminPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
-	authplugin, _ := q.ic.GetPlugin("auth")
-	q.authplugin = authplugin.(*AuthPlugin)
 }
 
 func (q *AdminPlugin) String() string {
@@ -28,14 +25,14 @@ func (q *AdminPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if msg.Command != "JOIN" {
 		return
 	}
-	if q.authplugin.GetAccessLevel(msg.Source) >= 200 {
+	if q.ic.GetAccessLevel(msg.Source) >= 200 {
 		q.ic.SendLine("MODE " + msg.Target + " +o " + strings.SplitN(msg.Source, "!", 2)[0])
 		return
 	}
 }
 
 func (q *AdminPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	if q.authplugin.GetAccessLevel(cmd.Source) < 400 {
+	if q.ic.GetAccessLevel(cmd.Source) < 400 {
 		// Don't send any error messages
 		return
 	}

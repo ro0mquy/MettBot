@@ -34,7 +34,7 @@ func (g *Greeter) ProcessLine(msg *ircclient.IRCMessage) {
 		log.Println("plugin \"config\" doesn't exist")
 		return
 	}
-	conf, _ := c.(*ConfigPlugin)
+	conf, _ := c.(*ircclient.ConfigPlugin)
 	conf.Lock() // muss ich bei read-only garned, oder?
 	our_nick, _ := conf.Conf.String("Server", "nick")
 	conf.Unlock()

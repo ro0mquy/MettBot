@@ -4,15 +4,10 @@ import (
 	"ircclient"
 	"log"
 	"plugins"
-	"utf8"
 )
 
 func main() {
-	confplugin := plugins.NewConfigPlugin()
-	if confplugin == nil {
-		return
-	}
-	c := confplugin.Conf
+	/* TODO: Move that to config plugin
 	options := make(map[string]string)
 	for _, x := range []string{"host", "nick", "ident", "realname"} {
 		it, err := c.String("Server", x)
@@ -30,11 +25,10 @@ func main() {
 	if utf8.RuneCountInString(trigger) != 1 {
 		log.Fatal("Trigger must be exactly one unicode rune long")
 	}
+	*/
 
-	s := ircclient.NewIRCClient(options["host"], options["nick"], options["realname"], options["ident"], trigger)
-	s.RegisterPlugin(confplugin)
+	s := ircclient.NewIRCClient("go-faui2k11.cfg")
 	s.RegisterPlugin(new(plugins.ListPlugins))
-	s.RegisterPlugin(new(plugins.AuthPlugin))
 	s.RegisterPlugin(plugins.NewLoggerPlugin("irclogs"))
 	s.RegisterPlugin(new(plugins.LecturePlugin))
 	s.RegisterPlugin(new(plugins.QuitHandler))
@@ -45,7 +39,6 @@ func main() {
 	if ok != nil {
 		log.Fatal(ok.String())
 	}
-	//s.SendLine("JOIN #go-faui2k11") // For testing purposes
 	ok = s.InputLoop()
 	if ok != nil {
 		log.Fatal(ok.String())

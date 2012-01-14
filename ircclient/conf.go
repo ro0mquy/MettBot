@@ -1,25 +1,24 @@
-package plugins
+package ircclient
 
 // This plugin manages a common config-file pointer
 // and the locks on it.
 
 import (
 	"sync"
-	"ircclient"
 	"github.com/kless/goconfig/config"
 	"log"
 )
 
 type ConfigPlugin struct {
-	ic   *ircclient.IRCClient
+	ic   *IRCClient
 	filename string
 	Conf *config.Config
 	// Operations to the Config structure should be atomic
 	lock *sync.Mutex
 }
 
-func NewConfigPlugin() *ConfigPlugin {
-	c, ok := config.ReadDefault("go-faui2k11.cfg")
+func NewConfigPlugin(filename string) *ConfigPlugin {
+	c, ok := config.ReadDefault(filename)
 	if ok != nil {
 		c = config.NewDefault()
 		c.AddSection("Server")
@@ -29,19 +28,19 @@ func NewConfigPlugin() *ConfigPlugin {
 		c.AddOption("Server", "realname", "TestBot Client")
 		c.AddOption("Server", "trigger", ".")
 		c.AddSection("Auth")
-		c.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 default config file")
+		c.WriteFile(filename, 0644, "go-faui2k11 default config file")
 		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
 		return nil
 	}
-	return &ConfigPlugin{nil, "go-faui2k11.cfg", c, new(sync.Mutex)}
+	return &ConfigPlugin{nil, filename, c, new(sync.Mutex)}
 }
-func (cp *ConfigPlugin) Register(cl *ircclient.IRCClient) {
+func (cp *ConfigPlugin) Register(cl *IRCClient) {
 	cp.ic = cl
 }
 func (cp *ConfigPlugin) String() string {
-	return "config"
+	return "conf"
 }
-func (cp *ConfigPlugin) ProcessLine(msg *ircclient.IRCMessage) {
+func (cp *ConfigPlugin) ProcessLine(msg *IRCMessage) {
 	// Empty
 }
 func (cp *ConfigPlugin) Unregister() {
@@ -52,7 +51,7 @@ func (cp *ConfigPlugin) Unregister() {
 func (cp *ConfigPlugin) Info() string {
 	return "run-time configuration manager plugin"
 }
-func (cp *ConfigPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
+func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 	switch cmd.Command {
 	case "version":
 		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.01a")
@@ -62,7 +61,7 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 			cp.ic.Reply(cmd, "Sorry, no authentication plugin loaded")
 			return
 		}
-		auth := authplugin.(*AuthPlugin)
+		auth := authplugin.(*authPlugin)
 		if auth.GetAccessLevel(cmd.Source) < 400 {
 			cp.ic.Reply(cmd, "You are not authorized to do that")
 			return

@@ -6,22 +6,10 @@ import (
 
 type ChannelsPlugin struct {
 	ic         *ircclient.IRCClient
-	authplugin *AuthPlugin
-	confplugin *ConfigPlugin
 }
 
 func (q *ChannelsPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
-	plugin, ok := q.ic.GetPlugin("config")
-	authplugin, ok2  := q.ic.GetPlugin("auth")
-	if !ok || !ok2 {
-		panic("ChannelsPlugin: Register: Unable to get necessary plugins")
-	}
-	q.confplugin = plugin.(*ConfigPlugin)
-	q.authplugin = authplugin.(*AuthPlugin)
-	if !q.confplugin.Conf.HasSection("Channels") {
-		q.confplugin.Conf.AddSection("Channels")
-	}
 }
 
 func (q *ChannelsPlugin) String() string {
@@ -37,9 +25,7 @@ func (q *ChannelsPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		return
 	}
 	/* When registering, join channels */
-	q.confplugin.Lock()
-	defer q.confplugin.Unlock()
-	options, _ := q.confplugin.Conf.Options("Channels")
+	options := q.ic.GetOptions("Channels")
 	for _, key := range options {
 		q.ic.SendLine("JOIN #" + key)
 	}
@@ -50,7 +36,7 @@ func (q *ChannelsPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	if cmd.Command != "addchannel" && cmd.Command != "join" && cmd.Command != "part" {
 		return
 	}
-	if q.authplugin.GetAccessLevel(cmd.Source) < 200 {
+	if q.ic.GetAccessLevel(cmd.Source) < 200 {
 		q.ic.Reply(cmd, "You are not authorized to do that")
 		return
 	}
@@ -66,11 +52,9 @@ func (q *ChannelsPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		q.ic.SendLine("PART #" + cmd.Args[0])
 		return
 	}
-	q.confplugin.Lock()
-	defer q.confplugin.Unlock()
 	// TODO: Quick'n'dirty. Check whether channel already exists and strip #, if
 	// existent.
-	q.confplugin.Conf.AddOption("Channels", cmd.Args[0], "")
+	q.ic.SetStringOption("Channels", cmd.Args[0], "42")
 	q.ic.SendLine("JOIN #" + cmd.Args[0])
 }
 

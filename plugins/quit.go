@@ -6,7 +6,7 @@ package plugins
 
 import (
 	"ircclient"
-	"log"
+	//"log"
 )
 
 const (
@@ -16,24 +16,10 @@ const (
 
 type QuitHandler struct {
 	ic     *ircclient.IRCClient
-	auth   *AuthPlugin
-	config *ConfigPlugin
 }
 
 func (q *QuitHandler) Register(ic *ircclient.IRCClient) {
 	q.ic= ic
-
-	auth, ok := q.ic.GetPlugin("auth")
-	if !ok {
-		panic("QuitHandler: unable to get auth plugin")
-	}
-	q.auth, _ = auth.(*AuthPlugin)
-
-	conf, ok := q.ic.GetPlugin("config")
-	if !ok {
-		panic("QuitHandler: unable to get config plugin")
-	}
-	q.config, _ = conf.(*ConfigPlugin)
 }
 
 func (q *QuitHandler) String() string {
@@ -52,10 +38,11 @@ func (q *QuitHandler) ProcessCommand(cmd *ircclient.IRCCommand) {
 	if cmd.Command != "quit" {
 		return
 	}
-	lvl := q.auth.GetAccessLevel(cmd.Source)
-	q.config.Lock()
-	// i'd love to defer unlock, but q.ic.Disconnect blocks if q.config is locked
+	lvl := q.ic.GetAccessLevel(cmd.Source)
 
+	_ = lvl
+	// TODO!
+	/*
 	if ! q.config.Conf.HasSection("Quit") {
 		log.Println("no \"Quit\" section.. adding one for your convenience")
 		q.config.Conf.AddSection("Quit")
@@ -94,6 +81,7 @@ func (q *QuitHandler) ProcessCommand(cmd *ircclient.IRCCommand) {
 		q.config.Unlock()
 		q.ic.Disconnect(quitmsg)
 	}
+	*/
 }
 
 func (q *QuitHandler) Unregister() {

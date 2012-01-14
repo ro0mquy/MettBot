@@ -1,51 +1,44 @@
-package plugins
+package ircclient
 
 import (
 	"strconv"
-	"ircclient"
 	"fmt"
 	"regexp"
 )
 
-type AuthPlugin struct {
-	ic       *ircclient.IRCClient
+type authPlugin struct {
+	ic       *IRCClient
 	confplugin *ConfigPlugin
 }
 
-func NewAuthPlugin() *AuthPlugin {
-	return &AuthPlugin{nil, nil}
+func NewauthPlugin() *authPlugin {
+	return &authPlugin{nil, nil}
 }
-func (a *AuthPlugin) Register(cl *ircclient.IRCClient) {
+func (a *authPlugin) Register(cl *IRCClient) {
 	a.ic = cl
-	plugin, ok := a.ic.GetPlugin("config")
-	if !ok {
-		panic("AuthPlugin: Register: Unable to get configuration manager plugin")
-	}
-	a.confplugin, _ = plugin.(*ConfigPlugin)
-	if !a.confplugin.Conf.HasSection("Auth") {
-		panic("No \"Auth\" section in config file present")
-	}
+	/* TODO: Use new interface in IRCClient
 	options, _ := a.confplugin.Conf.Options("Auth")
 	for _, mask := range options {
 		if _, err := regexp.Compile(mask); err != nil {
 			panic(err.String())
 		}
 	}
+	*/
 	a.ic.RegisterCommandHandler("mya", 0, 0, a)
 }
-func (a *AuthPlugin) String() string {
+func (a *authPlugin) String() string {
 	return "auth"
 }
-func (a *AuthPlugin) ProcessLine(msg *ircclient.IRCMessage) {
+func (a *authPlugin) ProcessLine(msg *IRCMessage) {
 	// Empty
 }
-func (a *AuthPlugin) Unregister() {
+func (a *authPlugin) Unregister() {
 	// Empty
 }
-func (a *AuthPlugin) Info() string {
+func (a *authPlugin) Info() string {
 	return "Access control manager"
 }
-func (a *AuthPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
+func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 	switch cmd.Command {
 	case "myaccess": fallthrough
 	case "mya":
@@ -95,7 +88,7 @@ func (a *AuthPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		}
 	}
 }
-func (a *AuthPlugin) GetAccessLevel(host string) int {
+func (a *authPlugin) GetAccessLevel(host string) int {
 	a.confplugin.Lock()
 	options, _ := a.confplugin.Conf.Options("Auth")
 	maxaccess := 0

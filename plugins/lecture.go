@@ -15,8 +15,6 @@ const notifyBefore = 12 // TODO: config
 
 type LecturePlugin struct {
 	ic            *ircclient.IRCClient
-	confplugin    *ConfigPlugin
-	authplugin    *AuthPlugin
 	notifications *list.List
 	done          chan bool
 	update        chan bool
@@ -66,14 +64,12 @@ func (l *LecturePlugin) fillNotificationList() int64 {
 
 	l.notifications = list.New()
 
-	l.confplugin.Lock()
 	l.lock.Lock()
-	defer l.confplugin.Unlock()
 	defer l.lock.Unlock()
 
-	options, _ := l.confplugin.Conf.Options("Lectures")
+	options := l.ic.GetOptions("Lectures")
 	for _, key := range options {
-		value, _ := l.confplugin.Conf.String("Lectures", key)
+		value := l.ic.GetStringOption("Lectures", key)
 		var lecture configEntry
 		if err := json.Unmarshal([]byte(value), &lecture); err != nil {
 			// panics should only happen during initialization, during runtime,
@@ -132,19 +128,6 @@ func (l *LecturePlugin) sendNotifications() {
 
 func (l *LecturePlugin) Register(cl *ircclient.IRCClient) {
 	l.ic = cl
-	plugin, ok := l.ic.GetPlugin("config")
-	if !ok {
-		panic("LecturePlugin: Register: Unable to get configuration manager plugin")
-	}
-	l.confplugin, _ = plugin.(*ConfigPlugin)
-	authplugin, ok := l.ic.GetPlugin("auth")
-	if !ok {
-		panic("LecturePlugin: Register: Unable to get authorization plugin")
-	}
-	l.authplugin, _ = authplugin.(*AuthPlugin)
-	if !l.confplugin.Conf.HasSection("Lectures") {
-		l.confplugin.Conf.AddSection("Lectures")
-	}
 	l.done = make(chan bool)
 	l.update = make(chan bool)
 	go l.sendNotifications()
@@ -165,7 +148,7 @@ func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	if cmd.Command != "reglecture" && cmd.Command != "dellecture" {
 		return
 	}
-	if l.authplugin.GetAccessLevel(cmd.Source) < 300 {
+	if l.ic.GetAccessLevel(cmd.Source) < 300 {
 		l.ic.Reply(cmd, "You are not authorized to do that")
 		return
 	}
@@ -184,9 +167,7 @@ func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 			return
 		}
 		jlecture, _ := json.Marshal(lecture)
-		l.confplugin.Lock()
-		l.confplugin.Conf.AddOption("Lectures", fmt.Sprintf("%d", time.Seconds()), string(jlecture))
-		l.confplugin.Unlock()
+		l.ic.SetStringOption("Lectures", fmt.Sprintf("%d", time.Seconds()), string(jlecture))
 		l.ic.Reply(cmd, "Lecture added.")
 		l.fillNotificationList()
 		l.update <- true

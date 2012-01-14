@@ -5,13 +5,13 @@ package ircclient
 
 import (
 	"os"
+	"log"
 	"strings"
 	"fmt"
 )
 
 type IRCClient struct {
 	conn       *IRCConn
-	conf       map[string]string
 	plugins    *pluginStack
 	handlers map[string]handler
 	disconnect chan bool
@@ -26,14 +26,11 @@ type handler struct {
 // Returns a new IRCClient connection with the given configuration options.
 // It will not connect to the given server until Connect() has been called,
 // so you can register plugins before connecting
-func NewIRCClient(hostport, nick, rname, ident string, trigger string) *IRCClient {
-	c := &IRCClient{nil, make(map[string]string), newPluginStack(), make(map[string]handler), make(chan bool)}
-	c.conf["nick"] = nick
-	c.conf["hostport"] = hostport
-	c.conf["rname"] = rname
-	c.conf["ident"] = ident
-	c.conf["trigger"] = trigger
+func NewIRCClient(configfile string) *IRCClient {
+	c := &IRCClient{nil, newPluginStack(), make(map[string]handler), make(chan bool)}
 	c.RegisterPlugin(&basicProtocol{})
+	c.RegisterPlugin(NewConfigPlugin(configfile))
+	c.RegisterPlugin(new(authPlugin))
 	return c
 }
 
@@ -62,19 +59,65 @@ func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minac
 	return nil
 }
 
+// Gets one of the configuration options stored in the config object. Valid config
+// options for section "Server" usually include:
+//  - nick
+//  - hostport (colon-seperated host and port to connect to)
+//  - rname (the real name)
+//  - ident
+//  - trigger
+func (ic *IRCClient) GetStringOption(section, option string) string {
+	c, _ := ic.GetPlugin("conf")
+	if c == nil {
+		log.Fatal("wtf?")
+	}
+	cf, _ := c.(*ConfigPlugin)
+	cf.Lock()
+	retval, _ := cf.Conf.String(section, option)
+	cf.Unlock()
+	return retval
+}
+func (ic *IRCClient) SetStringOption(section, option, value string) {
+	c, _ := ic.GetPlugin("conf")
+	cf, _ := c.(*ConfigPlugin)
+	cf.Lock()
+	// TODO
+	cf.Unlock()
+}
+func (ic *IRCClient) DelOption(section, option string) {
+	// TODO
+}
+func (ic *IRCClient) GetOptions(section string) []string {
+	return nil
+}
+// TODO: SetIntOption...
+
+func (ic *IRCClient) GetAccessLevel(host string) int {
+	// TODO
+	return 0
+}
+
+func (ic *IRCClient) SetAccessLevel(host string, level int) {
+	// TODO
+}
+
+func (ic *IRCClient) DelAccessLevel(host string) {
+	// TODO
+}
+
 // Connects to the server specified on object creation. If the chosen nickname is
 // already in use, it will automatically be suffixed with an single underscore until
 // an unused nickname is found. This function blocks until the connection attempt
 // has been finished.
 func (ic *IRCClient) Connect() os.Error {
 	ic.conn = NewIRCConn()
-	e := ic.conn.Connect(ic.conf["hostport"])
+	e := ic.conn.Connect(ic.GetStringOption("Server", "host"))
 	if e != nil {
 		return e
 	}
-	ic.conn.Output <- "NICK " + ic.conf["nick"]
-	ic.conn.Output <- "USER " + ic.conf["ident"] + " * Q :" + ic.conf["rname"]
-	nick := ic.conf["nick"]
+	ic.conn.Output <- "NICK " + ic.GetStringOption("Server", "nick")
+	ic.conn.Output <- "USER " + ic.GetStringOption("Server", "ident") + " * Q :" + ic.GetStringOption("Server", "rname")
+	nick := ic.GetStringOption("Server", "nick")
 	for {
 		line, ok := <-ic.conn.Input
 		if !ok {
@@ -98,7 +141,7 @@ func (ic *IRCClient) Connect() os.Error {
 		case "433":
 			// Nickname already in use
 			nick = nick + "_"
-			ic.conf["nick"] = nick
+			ic.SetStringOption("Server", "nick", nick)
 			ic.conn.Output <- "NICK " + nick
 		case "001":
 			// Successfully registered
@@ -115,11 +158,11 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	if s == nil {
 		return
 	}
-	if (s.Command == "PRIVMSG" || s.Command == "NOTICE") && (s.Target == ic.conf["nick"] || strings.Index(s.Args[0], ic.conf["trigger"]) == 0) {
+	if (s.Command == "PRIVMSG" || s.Command == "NOTICE") && (s.Target == ic.GetStringOption("Server", "nick") || strings.Index(s.Args[0], ic.GetStringOption("Server", "trigger")) == 0) {
 		c = ParseCommand(s)
 		// Strip trigger, if necessary
-		if c != nil && s.Target != ic.conf["nick"] && len(c.Command) != 0 {
-			c.Command = c.Command[len(ic.conf["trigger"]):len(c.Command)]
+		if c != nil && s.Target != ic.GetStringOption("Server", "nick") && len(c.Command) != 0 {
+			c.Command = c.Command[len(ic.GetStringOption("Server", "trigger")):len(c.Command)]
 		}
 	}
 
@@ -165,22 +208,6 @@ func (ic *IRCClient) Disconnect(quitmsg string) {
 	ic.conn.Quit()
 }
 
-// Gets one of the configuration options supplied to the NewIRCClient() method. Valid config
-// options usually include:
-//  - nick
-//  - hostport (colon-seperated host and port to connect to)
-//  - rname (the real name)
-//  - ident
-//  - trigger
-func (ic *IRCClient) GetConfOpt(option string) string {
-	return ic.conf[option]
-}
-
-// Sets a configuration option (see also GetConfOpt())
-func (ic *IRCClient) SetConfOpt(option string) {
-	ic.conf[option] = option
-}
-
 // Dumps a raw line to the server socket. This is usually called by plugins, but may also
 // be used by the library user.
 func (ic *IRCClient) SendLine(line string) {
@@ -192,12 +219,6 @@ func (ic *IRCClient) shutdown() {
 		p := ic.plugins.Pop()
 		p.Unregister()
 	}
-}
-
-// Gets the current nickname. Note: This is equivalent to a call to GetConfOpt("nick") and
-// might be removed in the future. Better use GetConfOpt() for this purpose
-func (ic *IRCClient) GetNick() string {
-	return ic.conf["nick"]
 }
 
 // Returns a channel on which all plugins will be sent. Use it to iterate over all registered
@@ -218,7 +239,7 @@ func (ic *IRCClient) GetPlugin(name string) (Plugin, bool) {
 // future.
 func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 	var target string
-	if cmd.Target != ic.GetNick() {
+	if cmd.Target != ic.GetStringOption("Server", "nick") {
 		target = cmd.Target
 	} else {
 		target = strings.SplitN(cmd.Source, "!", 2)[0]
