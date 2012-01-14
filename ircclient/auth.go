@@ -16,15 +16,15 @@ func NewauthPlugin() *authPlugin {
 }
 func (a *authPlugin) Register(cl *IRCClient) {
 	a.ic = cl
-	/* TODO: Use new interface in IRCClient
-	options, _ := a.confplugin.Conf.Options("Auth")
+	options := a.ic.GetOptions("Auth")
 	for _, mask := range options {
 		if _, err := regexp.Compile(mask); err != nil {
 			panic(err.String())
 		}
 	}
-	*/
 	a.ic.RegisterCommandHandler("mya", 0, 0, a)
+	a.ic.RegisterCommandHandler("myaccess", 0, 0, a)
+	a.ic.RegisterCommandHandler("addaccess", 0, 400, a)
 }
 func (a *authPlugin) String() string {
 	return "auth"
@@ -47,10 +47,6 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 		slevel := fmt.Sprintf("%d", level)
 		a.ic.Reply(cmd, "Your access level is: "+slevel)
 	case "addaccess":
-		if len(cmd.Args) != 2 {
-			a.ic.Reply(cmd, "addaccess takes two arguments: mask and access level")
-			return
-		}
 		level := a.GetAccessLevel(cmd.Source)
 		newlevel, err := strconv.Atoi(cmd.Args[1])
 		if err != nil {
@@ -64,9 +60,7 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 			a.ic.Reply(cmd, "Error: Unable to compile regexp: "+err.String())
 			return
 		}
-		a.confplugin.Lock()
-		a.confplugin.Conf.AddOption("Auth", cmd.Args[0], fmt.Sprintf("%d", newlevel))
-		a.confplugin.Unlock()
+		a.ic.SetIntOption("Auth", cmd.Args[0], newlevel)
 		a.ic.Reply(cmd, "Permissions granted")
 	case "delaccess":
 		if len(cmd.Args) != 1 {
@@ -74,15 +68,13 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 			return
 		}
 		level := a.GetAccessLevel(cmd.Source)
-		a.confplugin.Lock()
-		defer a.confplugin.Unlock()
-		dlevel, success := a.confplugin.Conf.Int("Auth", cmd.Args[0])
-		if success == nil {
+		dlevel, ok := a.ic.GetIntOption("Auth", cmd.Args[0])
+		if ok != nil {
 			if dlevel >= level || level != 500 {
 				a.ic.Reply(cmd, "Can't remove mask: Has higher privileges than you")
 				return
 			}
-			a.confplugin.Conf.RemoveOption("Auth", cmd.Args[0])
+			a.ic.RemoveOption("Auth", cmd.Args[0])
 			a.ic.Reply(cmd, "Successfully removed mask")
 		} else {
 			a.ic.Reply(cmd, "Mask not found")
@@ -90,19 +82,15 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 	}
 }
 func (a *authPlugin) GetAccessLevel(host string) int {
-/*
-	options, _ := a.confplugin.Conf.Options("Auth")
+	options := a.ic.GetOptions("Auth")
 	maxaccess := 0
 	for _, mask := range options {
 		if match, _ := regexp.MatchString(mask, host); match == true {
-			newaccess, _ := a.confplugin.Conf.Int("Auth", mask)
+			newaccess, _ := a.ic.GetIntOption("Auth", mask)
 			if newaccess > maxaccess {
 				maxaccess = newaccess
 			}
 		}
 	}
-	defer a.confplugin.Unlock()
 	return maxaccess
-*/
-	return 500
 }

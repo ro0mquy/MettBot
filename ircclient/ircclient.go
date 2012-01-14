@@ -135,10 +135,10 @@ func (ic *IRCClient) SetIntOption(section, option string, value int) {
 	cf.Lock()
 	defer cf.Unlock()
 	stropt := fmt.Sprintf("%d", value)
-	if ! cf.HasSection(section) {
-		cf.AddSection(section)
+	if ! cf.Conf.HasSection(section) {
+		cf.Conf.AddSection(section)
 	}
-	cf.AddOption(section, option, stropt)
+	cf.Conf.AddOption(section, option, stropt)
 }
 
 
@@ -226,7 +226,8 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 		return
 	}
 	if handler, err := ic.handlers[c.Command]; err == true {
-		if ic.GetAccessLevel(c.Source) < handler.minaccess {
+		// Don't do regexp matching, if we don't need access anyway
+		if handler.minaccess > 0 && ic.GetAccessLevel(c.Source) < handler.minaccess {
 			ic.Reply(c, "You are not authorized to do that.")
 			return
 		}
