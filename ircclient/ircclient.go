@@ -6,20 +6,28 @@ package ircclient
 import (
 	"os"
 	"strings"
+	"fmt"
 )
 
 type IRCClient struct {
 	conn       *IRCConn
 	conf       map[string]string
 	plugins    *pluginStack
+	handlers map[string]handler
 	disconnect chan bool
+}
+
+type handler struct {
+	handler Plugin
+	minparams int
+	minaccess int
 }
 
 // Returns a new IRCClient connection with the given configuration options.
 // It will not connect to the given server until Connect() has been called,
 // so you can register plugins before connecting
 func NewIRCClient(hostport, nick, rname, ident string, trigger string) *IRCClient {
-	c := &IRCClient{nil, make(map[string]string), newPluginStack(), make(chan bool)}
+	c := &IRCClient{nil, make(map[string]string), newPluginStack(), make(map[string]handler), make(chan bool)}
 	c.conf["nick"] = nick
 	c.conf["hostport"] = hostport
 	c.conf["rname"] = rname
@@ -38,6 +46,19 @@ func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 	}
 	p.Register(ic)
 	ic.plugins.Push(p)
+	return nil
+}
+
+// Registers a command handler. Plugin callbacks will only be called if
+// the command matches. Note that only a single plugin per command may
+// be registered. This function is not synchronized, e.g., it shall only
+// be called during registration (as Plugin.Register()-calls are currently
+// sequential).
+func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minaccess int, plugin Plugin) os.Error {
+	if plug, err := ic.handlers[command]; err {
+		return os.NewError("Handler is already registered by plugin: " + plug.handler.String())
+	}
+	ic.handlers[command] = handler{plugin, minparams, minaccess}
 	return nil
 }
 
@@ -94,7 +115,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	if s == nil {
 		return
 	}
-	if (s.Command == "PRIVMSG" || s.Command == "NOTICE") && (s.Target == ic.conf["nick"] || string.Index(s.Args[0], ic.conf["trigger"]) == 0) {
+	if (s.Command == "PRIVMSG" || s.Command == "NOTICE") && (s.Target == ic.conf["nick"] || strings.Index(s.Args[0], ic.conf["trigger"]) == 0) {
 		c = ParseCommand(s)
 		// Strip trigger, if necessary
 		if c != nil && s.Target != ic.conf["nick"] && len(c.Command) != 0 {
@@ -102,11 +123,22 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 		}
 	}
 
+	// Call line handlers
 	for p := range ic.plugins.Iter() {
 		go p.ProcessLine(s)
-		if c != nil {
-			go p.ProcessCommand(c)
+	}
+
+	// Call command handler
+	if c == nil {
+		return
+	}
+	if handler, err := ic.handlers[c.Command]; err == true {
+		// TODO: Authorization level check
+		if len(c.Args) < handler.minparams {
+			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.minparams) + " parameters")
+			return
 		}
+		go handler.handler.ProcessCommand(c)
 	}
 }
 
