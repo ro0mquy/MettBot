@@ -36,6 +36,9 @@ func NewConfigPlugin(filename string) *ConfigPlugin {
 }
 func (cp *ConfigPlugin) Register(cl *IRCClient) {
 	cp.ic = cl
+	cl.RegisterCommandHandler("version", 0, 0, cp)
+	cl.RegisterCommandHandler("source", 0, 0, cp)
+	cl.RegisterCommandHandler("writeconf", 0, 400, cp)
 }
 func (cp *ConfigPlugin) String() string {
 	return "conf"
@@ -62,10 +65,7 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 			return
 		}
 		auth := authplugin.(*authPlugin)
-		if auth.GetAccessLevel(cmd.Source) < 400 {
-			cp.ic.Reply(cmd, "You are not authorized to do that")
-			return
-		}
+
 		cp.lock.Lock()
 		cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")
 		cp.Conf, _ = config.ReadDefault(cp.filename)
