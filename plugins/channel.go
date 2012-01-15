@@ -10,6 +10,9 @@ type ChannelsPlugin struct {
 
 func (q *ChannelsPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
+	cl.RegisterCommandHandler("join", 1, 200, q)
+	cl.RegisterCommandHandler("part", 1, 200, q)
+	cl.RegisterCommandHandler("addchannel", 1, 400, q)
 }
 
 func (q *ChannelsPlugin) String() string {
@@ -32,30 +35,17 @@ func (q *ChannelsPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (q *ChannelsPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	// TODO: Delchannel
-	if cmd.Command != "addchannel" && cmd.Command != "join" && cmd.Command != "part" {
-		return
-	}
-	if q.ic.GetAccessLevel(cmd.Source) < 200 {
-		q.ic.Reply(cmd, "You are not authorized to do that")
-		return
-	}
-	if len(cmd.Args) < 1 {
-		q.ic.Reply(cmd, "Too few parameters. Please specify a channel name.")
-		return
-	}
-	if cmd.Command == "join" {
+	switch cmd.Command {
+	case "join":
 		q.ic.SendLine("JOIN #" + cmd.Args[0])
-		return
-	}
-	if cmd.Command == "part" {
+	case "part":
 		q.ic.SendLine("PART #" + cmd.Args[0])
-		return
+	case "addchannel":
+		// TODO: Quick'n'dirty. Check whether channel already exists and strip #, if
+		// existent.
+		q.ic.SetStringOption("Channels", cmd.Args[0], "42")
+		q.ic.SendLine("JOIN #" + cmd.Args[0])
 	}
-	// TODO: Quick'n'dirty. Check whether channel already exists and strip #, if
-	// existent.
-	q.ic.SetStringOption("Channels", cmd.Args[0], "42")
-	q.ic.SendLine("JOIN #" + cmd.Args[0])
 }
 
 func (q *ChannelsPlugin) Unregister() {
