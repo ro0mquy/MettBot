@@ -8,6 +8,7 @@ import (
 	"github.com/kless/goconfig/config"
 	"log"
 	"utf8"
+	"os"
 )
 
 type ConfigPlugin struct {
@@ -31,7 +32,7 @@ func NewConfigPlugin(filename string) *ConfigPlugin {
 		c.AddSection("Auth")
 		c.WriteFile(filename, 0644, "go-faui2k11 default config file")
 		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
-		return nil
+		os.Exit(1)
 	}
 	for _, x := range []string{"host", "nick", "ident", "realname"} {
 		_, err := c.String("Server", x)
