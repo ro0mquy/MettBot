@@ -18,9 +18,10 @@ type IRCClient struct {
 }
 
 type handler struct {
-	handler   Plugin
-	minparams int
-	minaccess int
+	Handler   Plugin
+	Command   string
+	Minparams int
+	Minaccess int
 }
 
 // Returns a new IRCClient connection with the given configuration options.
@@ -53,9 +54,9 @@ func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 // sequential).
 func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minaccess int, plugin Plugin) os.Error {
 	if plug, err := ic.handlers[command]; err {
-		return os.NewError("Handler is already registered by plugin: " + plug.handler.String())
+		return os.NewError("Handler is already registered by plugin: " + plug.Handler.String())
 	}
-	ic.handlers[command] = handler{plugin, minparams, minaccess}
+	ic.handlers[command] = handler{plugin, command, minparams, minaccess}
 	return nil
 }
 
@@ -256,15 +257,15 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	}
 	if handler, err := ic.handlers[c.Command]; err == true {
 		// Don't do regexp matching, if we don't need access anyway
-		if handler.minaccess > 0 && ic.GetAccessLevel(c.Source) < handler.minaccess {
+		if handler.Minaccess > 0 && ic.GetAccessLevel(c.Source) < handler.Minaccess {
 			ic.Reply(c, "You are not authorized to do that.")
 			return
 		}
-		if len(c.Args) < handler.minparams {
-			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.minparams)+" parameters")
+		if len(c.Args) < handler.Minparams {
+			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.Minparams)+" parameters")
 			return
 		}
-		go handler.handler.ProcessCommand(c)
+		go handler.Handler.ProcessCommand(c)
 	}
 }
 
@@ -308,6 +309,18 @@ func (ic *IRCClient) shutdown() {
 // plugins.
 func (ic *IRCClient) IterPlugins() <-chan Plugin {
 	return ic.plugins.Iter()
+}
+
+// Returns a channel on which all command handlers will be sent.
+func (ic *IRCClient) IterHandlers() <-chan handler {
+	ch := make(chan handler, len(ic.handlers))
+	go func() {
+		for _, e := range ic.handlers {
+			ch <- e
+		}
+		close(ch)
+	}()
+	return ch
 }
 
 // Get the pointer to a specific plugin that has been registered using RegisterPlugin()
