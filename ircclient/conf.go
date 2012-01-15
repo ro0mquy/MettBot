@@ -7,6 +7,8 @@ import (
 	"sync"
 	"github.com/kless/goconfig/config"
 	"log"
+	"utf8"
+	"os"
 )
 
 type ConfigPlugin struct {
@@ -30,7 +32,20 @@ func NewConfigPlugin(filename string) *ConfigPlugin {
 		c.AddSection("Auth")
 		c.WriteFile(filename, 0644, "go-faui2k11 default config file")
 		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
-		return nil
+		os.Exit(1)
+	}
+	for _, x := range []string{"host", "nick", "ident", "realname"} {
+		_, err := c.String("Server", x)
+		if err != nil {
+			log.Fatal("Error while parsing config: " + err.String())
+		}
+	}
+	trigger, err := c.String("Server", "trigger")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if utf8.RuneCountInString(trigger) != 1 {
+		log.Fatal("Trigger must be exactly one unicode rune long")
 	}
 	return &ConfigPlugin{filename: filename, Conf: c}
 }
@@ -57,7 +72,7 @@ func (cp *ConfigPlugin) Info() string {
 func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 	switch cmd.Command {
 	case "version":
-		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.01a")
+		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.02")
 	case "writeconf":
 		cp.lock.Lock()
 		cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")

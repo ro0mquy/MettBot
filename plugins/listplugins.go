@@ -12,6 +12,7 @@ type ListPlugins struct {
 func (lp *ListPlugins) Register(ic *ircclient.IRCClient) {
 	lp.ic = ic
 	ic.RegisterCommandHandler("listplugins", 0, 0, lp)
+	ic.RegisterCommandHandler("listcommands", 0, 0, lp)
 }
 
 func (lp *ListPlugins) String() string {
@@ -19,7 +20,7 @@ func (lp *ListPlugins) String() string {
 }
 
 func (lp *ListPlugins) Info() string {
-	return "Lists all currently registered Plugins"
+	return "Lists all currently registered plugins and commands"
 }
 
 func (lp *ListPlugins) ProcessLine(msg *ircclient.IRCMessage) {
@@ -31,12 +32,25 @@ func (lp *ListPlugins) ProcessLine(msg *ircclient.IRCMessage) {
  * because strings.Join() does that for us
  **/
 func (lp *ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
-	a := make([]string, 0)
-	for plug := range lp.ic.IterPlugins() {
-		a = append(a, plug.String())
-	}
+	switch cmd.Command {
+	case "listplugins":
+		a := make([]string, 0)
+		for plug := range lp.ic.IterPlugins() {
+			a = append(a, plug.String())
+		}
 
-	lp.ic.Reply(cmd, strings.Join(a, ", "))
+		lp.ic.Reply(cmd, strings.Join(a, ", "))
+	case "listcommands":
+		c := lp.ic.IterHandlers()
+		commands := ""
+		for e := range c {
+			if commands != "" {
+				commands += ", "
+			}
+			commands += e.Command
+		}
+		lp.ic.Reply(cmd, commands)
+	}
 }
 
 func (lp *ListPlugins) Unregister() {
