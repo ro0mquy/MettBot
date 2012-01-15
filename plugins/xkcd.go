@@ -6,39 +6,41 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"http"
 	"json"
 	"rand"
 )
 
 type comic struct {
-	Num float64
+	Num int
 	Title string
-	Transcript string
-	Alt string
 }
 
-func (c *comic) readJSON(path string) (err os.Error) {
-	var (
-		file *os.File
-		raw []byte
-	)
-	if file, err = os.Open(path); err != nil {
-		return
-	}
-	if raw, err = ioutil.ReadAll(file); err != nil {
+func (c *comic) readJSON(number int) (err os.Error) {
+	raw, err := ioutil.ReadFile(fmt.Sprintf("comics/%v.json", number))
+	if err != nil {
+		if downloadJSON(number) {
+			err = c.readJSON(number)
+		}
 		return
 	}
 	err = json.Unmarshal(raw, c)
-	file.Close()
 	return
 }
 
-func (c *comic) titleContains(text string) bool {
-	return strings.Contains(c.Title, text)
+func downloadJSON(number int) bool {
+	url := fmt.Sprintf("http://xkcd.com/%v/info.0.json", number)
+	response, _ := http.Get(url)
+	if response.StatusCode != 200 {
+		return false
+	}
+	content, _ := ioutil.ReadAll(response.Body)
+	ioutil.WriteFile(fmt.Sprintf("comics/%v.json", number), content, 0644)
+	return true
 }
 
-func (c *comic) contains(text string) bool {
-	return strings.Contains(c.Title, text) || strings.Contains(c.Transcript, text)
+func (c *comic) titleContains(text string) bool {
+	return strings.Contains(strings.ToLower(c.Title), strings.ToLower(text))
 }
 
 // randomComic returns a comic number between 1 and x.maxComic (inclusive) except 404.
@@ -50,21 +52,53 @@ func (x *XKCDPlugin) randomComic() int {
 	return r + 2
 }
 
-// matchingComic returns the number a comic that contains all of the strings is args.
+const prob404 float32 = 0.5
+
+// matchingComic returns the number of a comic that contains all of the strings in args.
 // If no comic is found, it returns -1 or 404.
 func (x *XKCDPlugin) matchingComic(args []string) int {
-	return -1
+	numbers := make([]int, 0, 10)
+	for _, c := range x.comics {
+		contains := true
+		for _, a := range args {
+			contains = contains && c.titleContains(a)
+		}
+		if contains {
+			numbers = append(numbers, c.Num)
+		}
+	}
+	if len(numbers) == 0 {
+		if rand.Float32() < prob404 {
+			return 404
+		}
+		return -1
+	}
+	return numbers[rand.Intn(len(numbers))]
 }
 
 type XKCDPlugin struct {
 	ic *ircclient.IRCClient
 	maxComic int
+	comics []comic
 }
+
+func (x *XKCDPlugin) getMaxComic() {
+	 if maxComic, err := x.ic.GetIntOption("XKCD", "maxComic"); err == nil {
+		 x.maxComic = maxComic
+	 }
+ }
 
 func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
 	x.ic = cl
 	x.ic.RegisterCommandHandler("xkcd", 0, 0, x)
-	x.maxComic = 1000
+	x.getMaxComic()
+	x.comics = make([]comic, 0, x.maxComic)
+	for i := 1; i <= x.maxComic; i++ {
+		var c comic
+		if err := c.readJSON(i); err == nil {
+			x.comics = append(x.comics, c)
+		}
+	}
 }
 
 func (x *XKCDPlugin) String() string {
@@ -79,18 +113,16 @@ func (x *XKCDPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (x *XKCDPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	if cmd.Command == "xkcd" {
-		var number int
-		if len(cmd.Args) == 0 {
-			number = x.randomComic()
-		} else {
-			number = x.matchingComic(cmd.Args)
-		}
-		if number == -1 {
-			x.ic.Reply(cmd, "Sorry, didn’t find a matching comic.")
-		} else {
-			x.ic.Reply(cmd, fmt.Sprintf("http://xkcd.org/%v/", number))
-		}
+	var number int
+	if len(cmd.Args) == 0 {
+		number = x.randomComic()
+	} else {
+		number = x.matchingComic(cmd.Args)
+	}
+	if number == -1 {
+		x.ic.Reply(cmd, "Sorry, didn’t find a matching comic.")
+	} else {
+		x.ic.Reply(cmd, fmt.Sprintf("http://xkcd.org/%v/", number))
 	}
 }
 
