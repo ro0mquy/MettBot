@@ -11,7 +11,7 @@ import (
 	"log"
 )
 
-const notifyBefore = 12 // TODO: config
+const notifyBefore = 600 // TODO: config
 
 type LecturePlugin struct {
 	ic            *ircclient.IRCClient
@@ -117,7 +117,6 @@ func (l *LecturePlugin) sendNotifications() {
 		for e := l.notifications.Front(); e != nil; e = e.Next() {
 			notify := e.Value.(notification)
 			entry := notify.entry
-			log.Println("Trying")
 			if notify.when <= time.Seconds() {
 				l.ic.SendLine("PRIVMSG " + entry.Channel + " :inb4 (" + entry.Time + "): \"" + entry.LongName + "\" (" + entry.Name + ") bei " + entry.Academic + ", Ort: " + entry.Venue)
 			}
@@ -131,7 +130,7 @@ func (l *LecturePlugin) Register(cl *ircclient.IRCClient) {
 	l.done = make(chan bool)
 	l.update = make(chan bool)
 	go l.sendNotifications()
-	cl.RegisterCommandHandler("addlecture", 0, 300, l)
+	cl.RegisterCommandHandler("reglecture", 0, 300, l)
 	// TODO: dellecture
 }
 
