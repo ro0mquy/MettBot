@@ -22,6 +22,13 @@ func (q *AdminPlugin) Info() string {
 	return "provides commands for bot-admins"
 }
 
+func (q *AdminPlugin) Usage(cmd string) string {
+	switch cmd {
+	case "inviteme":
+		return "inviteme <chanelname>"
+	}
+}
+
 func (q *AdminPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if msg.Command != "JOIN" {
 		return
