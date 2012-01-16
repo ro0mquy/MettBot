@@ -22,6 +22,10 @@ func (q *QDevoicePlugin) Info() string {
 	return "automatically de-voices people who got voice by Norad after saying \"!q\""
 }
 
+func (q *QDevoicePlugin) Usage(cmd string) string {
+	// stub for interface satisfaction
+}
+
 func (q *QDevoicePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if strings.Index(msg.Source, "cl-faui2k9") == 0 && msg.Command == "MODE" &&
 		msg.Args[0] == "+v" && len(msg.Args) > 1 {
