@@ -45,7 +45,11 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 	case "mya":
 		level := a.GetAccessLevel(cmd.Source)
 		slevel := fmt.Sprintf("%d", level)
-		a.ic.Reply(cmd, "Your access level is: "+slevel)
+		if level == 500 {
+			a.ic.Reply(cmd, "Your access level is over 9000")
+		} else {
+			a.ic.Reply(cmd, "Your access level is: "+slevel)
+		}
 	case "addaccess":
 		level := a.GetAccessLevel(cmd.Source)
 		newlevel, err := strconv.Atoi(cmd.Args[1])
