@@ -150,6 +150,7 @@ func (l *LecturePlugin) Usage(cmd string) string {
 		// bei num_args < minargs automagisch Usage aufgerufen wird
 		return "reglecture <shortname> <time> <channel> <longname> <academic> <location>"
 	}
+	return ""
 }
 
 func (l *LecturePlugin) ProcessLine(msg *ircclient.IRCMessage) {

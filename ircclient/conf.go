@@ -68,6 +68,7 @@ func (cp *ConfigPlugin) Usage(cmd string) string {
 	case "writeconf":
 		return "writeconf: writes in-memory config options to disk"
 	}
+	return ""
 }
 
 func (cp *ConfigPlugin) ProcessLine(msg *IRCMessage) {

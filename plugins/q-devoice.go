@@ -24,6 +24,7 @@ func (q *QDevoicePlugin) Info() string {
 
 func (q *QDevoicePlugin) Usage(cmd string) string {
 	// stub for interface satisfaction
+	return ""
 }
 
 func (q *QDevoicePlugin) ProcessLine(msg *ircclient.IRCMessage) {

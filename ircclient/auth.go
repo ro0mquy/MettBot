@@ -39,6 +39,8 @@ func (a *authPlugin) Usage(cmd string) string {
 	case "addaccess":
 		return "addaccess <hostmask> <level>: adds access-level <level> for hostmask <hostmask>"
 	}
+	// shouldn't be a problem, this usage isn't called unless we're registered for it
+	return ""
 }
 
 func (a *authPlugin) ProcessLine(msg *IRCMessage) {

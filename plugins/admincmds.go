@@ -27,6 +27,7 @@ func (q *AdminPlugin) Usage(cmd string) string {
 	case "inviteme":
 		return "inviteme <chanelname>"
 	}
+	return ""
 }
 
 func (q *AdminPlugin) ProcessLine(msg *ircclient.IRCMessage) {

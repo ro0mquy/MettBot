@@ -49,6 +49,7 @@ func (l *LoggerPlugin) Usage() string {
 	// this method only exists for interface satisfaction
 	// the logger plugin doesn't have any commands, so no
 	// usage info is needed
+	return ""
 }
 
 func (l *LoggerPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {

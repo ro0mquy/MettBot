@@ -36,6 +36,7 @@ func (lp *ListPlugins) Usage(cmd string) string {
 	case "listcommands":
 		return cmd + ": list all available commands"
 	}
+	return ""
 }
 
 /**

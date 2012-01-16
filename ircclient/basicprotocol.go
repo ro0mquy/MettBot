@@ -49,6 +49,7 @@ func (bp *basicProtocol) String() string {
 
 func (bp *basicProtocol) Usage(cmd string) string {
 	// stub, no commands here
+	return ""
 }
 
 func (bp *basicProtocol) ProcessLine(msg *IRCMessage) {

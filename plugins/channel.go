@@ -32,6 +32,7 @@ func (cp *ChannelsPlugin) Usage(cmd string) string {
 	case "addchannel":
 		return "addchannel <channel_without_#>, adds #<channel> to the bot's autojoin list"
 	}
+	return ""
 }
 
 func (q *ChannelsPlugin) ProcessLine(msg *ircclient.IRCMessage) {

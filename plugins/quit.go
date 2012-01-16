@@ -38,6 +38,7 @@ func (q *QuitHandler) Usage(cmd string) string {
 	case "quit":
 		return "quit: quits this bot"
 	}
+	return ""
 }
 
 func (q *QuitHandler) ProcessLine(msg *ircclient.IRCMessage) {
