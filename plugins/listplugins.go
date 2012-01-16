@@ -53,11 +53,11 @@ func (lp *ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
 
 		lp.ic.Reply(cmd, strings.Join(a, ", "))
 	case "help":
-		if len(cmd.Args) == 0 {
-			fallthrough // alias for listcommands
-		} else {
-			return lp.ic.GetUsage(cmd.Args[0])
+		if len(cmd.Args) >= 1 {
+			lp.ic.Reply(cmd, lp.ic.GetUsage(cmd.Args[0]))
+			return
 		}
+		fallthrough // listcommands if 0 parameters
 	case "listcommands":
 		c := lp.ic.IterHandlers()
 		commands := ""
