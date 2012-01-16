@@ -29,6 +29,18 @@ func (a *authPlugin) Register(cl *IRCClient) {
 func (a *authPlugin) String() string {
 	return "auth"
 }
+
+func (a *authPlugin) Usage(cmd string) string {
+	switch cmd {
+	case "mya":
+		fallthrough
+	case "myaccess":
+		return cmd + ": tells you what access-level (i.e. permissions) you have"
+	case "addaccess":
+		return "addaccess <hostmask> <level>: adds access-level <level> for hostmask <hostmask>"
+	}
+}
+
 func (a *authPlugin) ProcessLine(msg *IRCMessage) {
 	// Empty
 }
