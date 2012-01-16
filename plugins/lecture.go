@@ -142,6 +142,16 @@ func (l *LecturePlugin) Info() string {
 	return "lecture notifications"
 }
 
+func (l *LecturePlugin) Usage(cmd string) string {
+	switch cmd {
+	case "reglecture":
+		// TODO: ich hab des beispiel und die ausführliche fehlermeldung mal drin glassen, weils
+		// in dem fall vllt. echt hilft, aber wir sollten des evtl vereinheitlichen, so dass
+		// bei num_args < minargs automagisch Usage aufgerufen wird
+		return "reglecture <shortname> <time> <channel> <longname> <academic> <location>"
+	}
+}
+
 func (l *LecturePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
