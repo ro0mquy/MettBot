@@ -3,17 +3,32 @@ package plugins
 import (
 	"ircclient"
 	"fmt"
+	"log"
 	"io/ioutil"
 	"os"
 	"strings"
 	"http"
 	"json"
 	"rand"
+	"time"
 )
 
 type comic struct {
 	Num int
 	Title string
+}
+
+func getCurrentComic() int {
+	response, _ := http.Get("http://xkcd.com/info.0.json")
+	if response.StatusCode != 200 {
+		return 0
+	}
+	content, _ := ioutil.ReadAll(response.Body)
+	var c comic
+	if err := json.Unmarshal(content, &c); err != nil {
+		return 0
+	}
+	return c.Num
 }
 
 func (c *comic) readJSON(number int) (err os.Error) {
@@ -57,6 +72,11 @@ const prob404 float32 = 0.5
 // matchingComic returns the number of a comic that contains all of the strings in args.
 // If no comic is found, it returns -1 or 404.
 func (x *XKCDPlugin) matchingComic(args []string) int {
+	currentTime := time.LocalTime()
+	if currentTime.Day != x.lastUpdate.Day || currentTime.Month != x.lastUpdate.Month || currentTime.Year != x.lastUpdate.Year {
+		x.updateComics()
+		x.lastUpdate = currentTime
+	}
 	numbers := make([]int, 0, 10)
 	for _, c := range x.comics {
 		contains := true
@@ -80,26 +100,53 @@ type XKCDPlugin struct {
 	ic *ircclient.IRCClient
 	maxComic int
 	comics []comic
+	lastUpdate *time.Time
 }
 
-func (x *XKCDPlugin) getMaxComic() {
-	 if maxComic, err := x.ic.GetIntOption("XKCD", "maxComic"); err == nil {
-		 x.maxComic = maxComic
-	 }
- }
-
 func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
+	var err os.Error
 	x.ic = cl
 	x.ic.RegisterCommandHandler("xkcd", 0, 0, x)
-	x.getMaxComic()
+	x.maxComic = getCurrentComic()
+	if x.maxComic == 0 {
+		if x.maxComic, err = x.ic.GetIntOption("XKCD", "maxComic"); err != nil {
+			x.maxComic = 0
+		}
+	}
+	x.ic.SetIntOption("XKCD", "maxComic", x.maxComic)
 	x.comics = make([]comic, 0, x.maxComic)
+	if err = os.MkdirAll("comics", 0755); err != nil {
+		log.Fatalln(err)
+	}
 	for i := 1; i <= x.maxComic; i++ {
 		var c comic
 		if err := c.readJSON(i); err == nil {
 			x.comics = append(x.comics, c)
 		}
 	}
+	x.lastUpdate = time.LocalTime()
 }
+
+func (x *XKCDPlugin) updateComics() {
+	newMax := getCurrentComic()
+	var err os.Error
+	if newMax == 0 {
+		if newMax, err = x.ic.GetIntOption("XKCD", "maxComic"); err != nil {
+			newMax = 0
+		}
+	}
+	if newMax <= x.maxComic {
+		return
+	}
+	x.ic.SetIntOption("XKCD", "maxComic", newMax)
+	for i := x.maxComic; i <= newMax; i++ {
+		var c comic
+		if err = c.readJSON(i); err == nil {
+			x.comics = append(x.comics, c)
+		}
+	}
+}
+
 
 func (x *XKCDPlugin) String() string {
 	return "xkcd"
