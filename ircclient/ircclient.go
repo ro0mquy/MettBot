@@ -339,7 +339,7 @@ func (ic *IRCClient) GetUsage(cmd string) string {
 	if !exists {
 		return "no such command"
 	}
-	return plugin.Usage(cmd)
+	return plugin.Handler.Usage(cmd)
 }
 
 // Sends a reply to a parsed message from a user. This is mostly intended for plugins
