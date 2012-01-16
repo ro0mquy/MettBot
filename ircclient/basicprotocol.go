@@ -42,9 +42,15 @@ func (bp *basicProtocol) Register(cl *IRCClient) {
 		}
 	}()
 }
+
 func (bp *basicProtocol) String() string {
 	return "basic"
 }
+
+func (bp *basicProtocol) Usage(cmd string) string {
+	// stub, no commands here
+}
+
 func (bp *basicProtocol) ProcessLine(msg *IRCMessage) {
 	switch msg.Command {
 	case "PING":
