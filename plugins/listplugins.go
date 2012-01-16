@@ -13,6 +13,7 @@ func (lp *ListPlugins) Register(ic *ircclient.IRCClient) {
 	lp.ic = ic
 	ic.RegisterCommandHandler("listplugins", 0, 0, lp)
 	ic.RegisterCommandHandler("listcommands", 0, 0, lp)
+	ic.RegisterCommandHandler("help", 0, 0, lp)
 }
 
 func (lp *ListPlugins) String() string {
