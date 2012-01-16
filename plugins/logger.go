@@ -71,7 +71,7 @@ func (l *LoggerPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		} else { // query
 			s = msg.Source
 		}
-		host := strings.SplitN(l.ic.GetStringOption("Server", "hostport"), ":", 2)[0]
+		host := strings.SplitN(l.ic.GetStringOption("Server", "host"), ":", 2)[0]
 		full_filename := l.dir + "/" + host + "_" + s
 		msg := fmt.Sprintf("%s | %s: %s\n", time.LocalTime().String(),
 			strings.SplitN(msg.Source, "!", 2)[0], strings.Join(msg.Args, " "))

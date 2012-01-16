@@ -18,9 +18,10 @@ type IRCClient struct {
 }
 
 type handler struct {
-	handler   Plugin
-	minparams int
-	minaccess int
+	Handler   Plugin
+	Command   string
+	Minparams int
+	Minaccess int
 }
 
 // Returns a new IRCClient connection with the given configuration options.
@@ -53,9 +54,9 @@ func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 // sequential).
 func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minaccess int, plugin Plugin) os.Error {
 	if plug, err := ic.handlers[command]; err {
-		return os.NewError("Handler is already registered by plugin: " + plug.handler.String())
+		return os.NewError("Handler is already registered by plugin: " + plug.Handler.String())
 	}
-	ic.handlers[command] = handler{plugin, minparams, minaccess}
+	ic.handlers[command] = handler{plugin, command, minparams, minaccess}
 	return nil
 }
 
@@ -66,6 +67,9 @@ func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minac
 //  - realname (the real name)
 //  - ident
 //  - trigger
+// All other sections are managed by the library user. Returns an
+// empty string if the option is empty, this means: you currently can't
+// use empty config values - they will be deemed non-existent!
 func (ic *IRCClient) GetStringOption(section, option string) string {
 	c, _ := ic.GetPlugin("conf")
 	if c == nil {
@@ -78,6 +82,8 @@ func (ic *IRCClient) GetStringOption(section, option string) string {
 	return retval
 }
 
+// Sets a single config option. Existing parameters are overriden,
+// if necessary, a new config section is automatically added.
 func (ic *IRCClient) SetStringOption(section, option, value string) {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
@@ -92,6 +98,8 @@ func (ic *IRCClient) SetStringOption(section, option, value string) {
 	cf.Unlock()
 }
 
+// Removes a single config option. Note: This does not delete the section,
+// even if it's empty.
 func (ic *IRCClient) RemoveOption(section, option string) {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
@@ -105,6 +113,11 @@ func (ic *IRCClient) RemoveOption(section, option string) {
 	cf.Conf.RemoveOption(section, option)
 }
 
+// Gets a list of all config keys for a given section. The return value is
+// an empty slice if there are no options present _or_ if there is no
+// section present. There is currently no way to check whether a section
+// exists, it is automatically added when calling one of the SetOption()
+// methods.
 func (ic *IRCClient) GetOptions(section string) []string {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
@@ -117,6 +130,8 @@ func (ic *IRCClient) GetOptions(section string) []string {
 	return opts
 }
 
+// Does the same as GetStringOption(), but with integers. Returns an os.Error,
+// if the given config option does not exist.
 func (ic *IRCClient) GetIntOption(section, option string) (int, os.Error) {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
@@ -129,6 +144,7 @@ func (ic *IRCClient) GetIntOption(section, option string) (int, os.Error) {
 	return v, nil
 }
 
+// See SetStringOption()
 func (ic *IRCClient) SetIntOption(section, option string, value int) {
 	c, _ := ic.GetPlugin("conf")
 	cf, _ := c.(*ConfigPlugin)
@@ -142,18 +158,27 @@ func (ic *IRCClient) SetIntOption(section, option string, value int) {
 }
 
 
+// Gets the highest matching access level for a given hostmask by comparing
+// the mask against all authorization entries. Default return value is 0
+// (no access).
 func (ic *IRCClient) GetAccessLevel(host string) int {
 	a, _ := ic.GetPlugin("auth")
 	auth, _ := a.(*authPlugin)
 	return auth.GetAccessLevel(host)
 }
 
+// Sets the access level for the given hostmask to level. Note that host may
+// be a regular expression, if exactly the same expression is already present
+// in the database, it is overridden.
 func (ic *IRCClient) SetAccessLevel(host string, level int) {
 	a, _ := ic.GetPlugin("auth")
 	auth, _ := a.(*authPlugin)
 	auth.SetAccessLevel(host, level )
 }
 
+// Delete the given regular expression from auth database. The "host" parameter
+// has to be exactly the string stored in the database, otherwise, the command
+// will have no effect.
 func (ic *IRCClient) DelAccessLevel(host string) {
 	a, _ := ic.GetPlugin("auth")
 	auth, _ := a.(*authPlugin)
@@ -232,15 +257,15 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	}
 	if handler, err := ic.handlers[c.Command]; err == true {
 		// Don't do regexp matching, if we don't need access anyway
-		if handler.minaccess > 0 && ic.GetAccessLevel(c.Source) < handler.minaccess {
+		if handler.Minaccess > 0 && ic.GetAccessLevel(c.Source) < handler.Minaccess {
 			ic.Reply(c, "You are not authorized to do that.")
 			return
 		}
-		if len(c.Args) < handler.minparams {
-			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.minparams)+" parameters")
+		if len(c.Args) < handler.Minparams {
+			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.Minparams)+" parameters")
 			return
 		}
-		go handler.handler.ProcessCommand(c)
+		go handler.Handler.ProcessCommand(c)
 	}
 }
 
@@ -284,6 +309,18 @@ func (ic *IRCClient) shutdown() {
 // plugins.
 func (ic *IRCClient) IterPlugins() <-chan Plugin {
 	return ic.plugins.Iter()
+}
+
+// Returns a channel on which all command handlers will be sent.
+func (ic *IRCClient) IterHandlers() <-chan handler {
+	ch := make(chan handler, len(ic.handlers))
+	go func() {
+		for _, e := range ic.handlers {
+			ch <- e
+		}
+		close(ch)
+	}()
+	return ch
 }
 
 // Get the pointer to a specific plugin that has been registered using RegisterPlugin()
