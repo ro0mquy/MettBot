@@ -27,6 +27,17 @@ func (lp *ListPlugins) ProcessLine(msg *ircclient.IRCMessage) {
 	return
 }
 
+func (lp *ListPlugins) Usage(cmd string) string {
+	switch cmd {
+	case "listplugins":
+		return "listplugins: lists all loaded plugins"
+	case "help":
+		fallthrough
+	case "listcommands":
+		return cmd + ": list all available commands"
+	}
+}
+
 /**
  * the array-foo makes it easy to leave out the last ", "
  * because strings.Join() does that for us
@@ -40,6 +51,12 @@ func (lp *ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
 		}
 
 		lp.ic.Reply(cmd, strings.Join(a, ", "))
+	case "help":
+		if len(cmd.Args) == 0 {
+			fallthrough // alias for listcommands
+		} else {
+			return lp.ic.GetUsage(cmd.Args[0])
+		}
 	case "listcommands":
 		c := lp.ic.IterHandlers()
 		commands := ""
