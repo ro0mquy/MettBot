@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"net"
 )
 
 
@@ -39,14 +40,20 @@ func (kp *KexecPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (kp *KexecPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	progname := os.Args[0] 
-	log.Println(progname)
-	file, ferr := kp.ic.GetConn().File()
-	if ferr != nil {
-		kp.ic.Reply(cmd, "couldn't kexec: " + ferr.String())
-		return
+	var fd_arg_string string
+	progname := os.Args[0]
+	if(len(os.Args) == 1) {
+		log.Println(progname)
+		tcpconn, _ := kp.ic.GetConn().(*net.TCPConn)
+		file, ferr := tcpconn.File()
+		if ferr != nil {
+			kp.ic.Reply(cmd, "couldn't kexec: " + ferr.String())
+			return
+		}
+		fd_arg_string = fmt.Sprintf("%d", file.Fd())
+	} else {
+		fd_arg_string = os.Args[1]
 	}
-	fd_arg_string := fmt.Sprintf("-fd=%d", file.Fd())
 	err := syscall.Exec(progname, []string{progname, fd_arg_string}, []string{})
 	// exec normally doesn't return
 	kp.ic.Reply(cmd, "couldn't kexec: " + syscall.Errstr(err))

@@ -200,6 +200,11 @@ func (ic *IRCClient) Connect() os.Error {
 	ic.conn.Output <- "NICK " + ic.GetStringOption("Server", "nick")
 	ic.conn.Output <- "USER " + ic.GetStringOption("Server", "ident") + " * Q :" + ic.GetStringOption("Server", "realname")
 	nick := ic.GetStringOption("Server", "nick")
+
+	if len(os.Args) > 1 {
+		return nil
+	}
+
 	for {
 		line, ok := <-ic.conn.Input
 		if !ok {
@@ -360,7 +365,7 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 
 
 // Returns the connection object, needed by the kexec function for the fd number
-func (ic *IRCClient) GetConn() *net.TCPConn {
+func (ic *IRCClient) GetConn() net.Conn {
 	// ic.conn is *ircConn
 	return ic.conn.conn
 }

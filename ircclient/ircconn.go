@@ -6,12 +6,11 @@ import (
 	"log"
 	"bufio"
 	"strings"
-	"flag"
 	"strconv"
 )
 
 type ircConn struct {
-	conn    *net.TCPConn
+	conn    net.Conn
 	bio     *bufio.ReadWriter
 	tmgr    *throttleIrcu
 	done    chan bool
@@ -27,10 +26,9 @@ func NewircConn() *ircConn {
 }
 
 func (ic *ircConn) Connect(hostport string) os.Error {
-	ic.conn.SetTimeout(1)
-	if len(flag.Args()) > 1 {
+	if len(os.Args) > 1 {
 		// we're coming from kexec
-		fd, err := strconv.Atoi(flag.Arg(1))
+		fd, err := strconv.Atoi(os.Args[1])
 		if err != nil {
 			log.Fatal("unable to parse argv[1]" + err.String())
 		}
@@ -39,23 +37,26 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 		if err != nil {
 			log.Fatal("unable to recover conn: " + err.String())
 		}
-		tcpconn, cast_err := conn.(*net.TCPConn)
-		if cast_err {
-			log.Fatal("unable to cast conn")
-		}
-		ic.conn = tcpconn
+		ic.conn = conn
+		//_, p := unsafe.Reflect(conn)
+		//iconn := unsafe.Unreflect(new(net.TCPConn), p)
+		//tcpconn, cast_err := iconn.(*net.TCPConn)
+		//if cast_err {
+		//	log.Fatal("unable to cast conn")
+		//}
+		//ic.conn = tcpconn
 	} else {
 		if len(hostport) == 0 {
 			return os.NewError("empty server addr, not connecting")
 		}
 		if ic.conn != nil {
-			log.Printf("warning: already connected to " + ic.conn.RemoteAddr().String())
+			log.Printf("warning: already connected")
 		}
 		c, err := net.Dial("tcp", hostport)
 		if err != nil {
 			return err
 		}
-		ic.conn, _ = c.(*net.TCPConn)
+		ic.conn = c
 	}
 	// from here on, we're on same behaviour again
 
