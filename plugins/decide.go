@@ -5,6 +5,7 @@ import (
 	"ircclient"
 	"rand"
 	"log"
+	"fmt" ///////////////////////i
 )
 
 type DecidePlugin struct {
@@ -15,6 +16,7 @@ type DecidePlugin struct {
 }
 
 func (d *DecidePlugin) Register(cl *ircclient.IRCClient) {
+	d.done = true
 	d.ic = cl
 	d.requests = make(chan *ircclient.IRCMessage, 64)
 }
@@ -31,44 +33,53 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if len(msg.Args) == 0 {
 		return
 	}
-	if msg.Args[0] == "!decide" {
+	if strings.Index(msg.Args[len(msg.Args) - 1], "!decide") == 0 {
+		fmt.Println("push")
 		d.requests <- msg
 		return
 	}
-	if strings.Index(msg.Source, "cl-faui2k9") == 0 && msg.Command == "PRIVMSG" {
+	cmd := ircclient.ParseCommand(msg)
+	if strings.Index(cmd.Source, "cl-faui2k9") == 0 && msg.Command == "PRIVMSG" {
 		if d.done {
 			select {
 			case d.current = <-d.requests:
 				d.done = false
+				fmt.Println("pop")
 			default:
+				fmt.Println("default")
 			}
 		}
 		if !d.done {
-			if strings.Split(d.current.Source, "!")[0] == strings.Split(msg.Args[0], ":")[0] {
-				if len(msg.Args) == 1 {
+			current := ircclient.ParseCommand(d.current)
+			fmt.Println("not done")
+
+			if strings.Split(d.current.Source, "!")[0] == strings.Split(cmd.Command, ":")[0] {
+				if len(cmd.Args) == 0 {
 					log.Println("cl-faui2k11 gibt leere Antwort")
 					d.done = true
 					return
 				}
-				if len(d.current.Args) <= 2 {
-					switch msg.Args[1] {
+				if len(current.Args) <= 1 {
+					switch cmd.Args[0] {
 					case "Yes":
-						d.ic.SendLine(d.current.Args[0] + " No")
+						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": No")
 					case "No":
-						d.ic.SendLine(d.current.Args[0] + " Yes")
+						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": Yes")
+					default:
+						fmt.Println("uiae")
 					}
 				} else {
 					var i int
-					for i = 1; i < len(d.current.Args); i++ {
-						if d.current.Args[i] == msg.Args[1] {
+					for i = 0; i < len(current.Args); i++ {
+						if current.Args[i] == cmd.Args[0] {
 							break
 						}
 					}
-					r := rand.Intn(len(d.current.Args) - 2) + 1
+					r := rand.Intn(len(current.Args) - 1)
 					if r >= i {
 						r++
 					}
-					d.ic.SendLine(d.current.Args[0] + d.current.Args[r])
+					d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": " + current.Args[r])
 				}
 				d.done = true
 			}
