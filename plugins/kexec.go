@@ -3,8 +3,9 @@ package plugins
 import (
 	"ircclient"
 	"syscall"
-	"flag"
 	"fmt"
+	"log"
+	"os"
 )
 
 
@@ -38,7 +39,8 @@ func (kp *KexecPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (kp *KexecPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	progname := flag.Arg(0)
+	progname := os.Args[0] 
+	log.Println(progname)
 	file, ferr := kp.ic.GetConn().File()
 	if ferr != nil {
 		kp.ic.Reply(cmd, "couldn't kexec: " + ferr.String())
