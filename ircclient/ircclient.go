@@ -197,13 +197,14 @@ func (ic *IRCClient) Connect() os.Error {
 		return e
 	}
 
-	ic.conn.Output <- "NICK " + ic.GetStringOption("Server", "nick")
-	ic.conn.Output <- "USER " + ic.GetStringOption("Server", "ident") + " * Q :" + ic.GetStringOption("Server", "realname")
-	nick := ic.GetStringOption("Server", "nick")
-
+	// Doing bot online restart. Don't reregister.
 	if len(os.Args) > 1 {
 		return nil
 	}
+
+	ic.conn.Output <- "NICK " + ic.GetStringOption("Server", "nick")
+	ic.conn.Output <- "USER " + ic.GetStringOption("Server", "ident") + " * Q :" + ic.GetStringOption("Server", "realname")
+	nick := ic.GetStringOption("Server", "nick")
 
 	for {
 		line, ok := <-ic.conn.Input

@@ -35,16 +35,10 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 		file := os.NewFile(fd, "conn")
 		conn, err := net.FileConn(file)
 		if err != nil {
+			log.Println("Connection fd is: " + strconv.Itoa(fd))
 			log.Fatal("unable to recover conn: " + err.String())
 		}
 		ic.conn = conn
-		//_, p := unsafe.Reflect(conn)
-		//iconn := unsafe.Unreflect(new(net.TCPConn), p)
-		//tcpconn, cast_err := iconn.(*net.TCPConn)
-		//if cast_err {
-		//	log.Fatal("unable to cast conn")
-		//}
-		//ic.conn = tcpconn
 	} else {
 		if len(hostport) == 0 {
 			return os.NewError("empty server addr, not connecting")
