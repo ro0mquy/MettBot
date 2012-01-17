@@ -10,6 +10,8 @@ type Plugin interface {
 	String() string
 	// Returns the description of the plugin in human-readable form, about one line long.
 	Info() string
+	// Returns usage for the Command cmd
+	Usage(cmd string) string
 	// This method is called by the parent IRCClient when a new line from server
 	// arrives, regardless of the other state of the connection. This means, if
 	// the plugin is registered soon enough, this handler method is also called

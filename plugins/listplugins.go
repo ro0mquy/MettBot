@@ -13,6 +13,7 @@ func (lp *ListPlugins) Register(ic *ircclient.IRCClient) {
 	lp.ic = ic
 	ic.RegisterCommandHandler("listplugins", 0, 0, lp)
 	ic.RegisterCommandHandler("listcommands", 0, 0, lp)
+	ic.RegisterCommandHandler("help", 0, 0, lp)
 }
 
 func (lp *ListPlugins) String() string {
@@ -25,6 +26,18 @@ func (lp *ListPlugins) Info() string {
 
 func (lp *ListPlugins) ProcessLine(msg *ircclient.IRCMessage) {
 	return
+}
+
+func (lp *ListPlugins) Usage(cmd string) string {
+	switch cmd {
+	case "listplugins":
+		return "listplugins: lists all loaded plugins"
+	case "help":
+		fallthrough
+	case "listcommands":
+		return cmd + ": list all available commands"
+	}
+	return ""
 }
 
 /**
@@ -40,6 +53,12 @@ func (lp *ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
 		}
 
 		lp.ic.Reply(cmd, strings.Join(a, ", "))
+	case "help":
+		if len(cmd.Args) >= 1 {
+			lp.ic.Reply(cmd, lp.ic.GetUsage(cmd.Args[0]))
+			return
+		}
+		fallthrough // listcommands if 0 parameters
 	case "listcommands":
 		c := lp.ic.IterHandlers()
 		commands := ""

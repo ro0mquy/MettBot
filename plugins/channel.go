@@ -23,6 +23,18 @@ func (q *ChannelsPlugin) Info() string {
 	return "Manages channel auto-join and possibly options"
 }
 
+func (cp *ChannelsPlugin) Usage(cmd string) string {
+	switch cmd {
+	case "join":
+		return "join <channel_without_#>, makes the bot join #<channel>"
+	case "part":
+		return "part <channel_without_#>, parts the bot from #<channel>"
+	case "addchannel":
+		return "addchannel <channel_without_#>, adds #<channel> to the bot's autojoin list"
+	}
+	return ""
+}
+
 func (q *ChannelsPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if msg.Command != "001" {
 		return

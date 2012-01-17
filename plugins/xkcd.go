@@ -166,6 +166,14 @@ func (x *XKCDPlugin) Info() string {
 	return "search xkcd"
 }
 
+func (x *XKCDPlugin) Usage(cmd string) string {
+	switch cmd {
+	case "xkcd":
+		return "xkcd <search term>: returns the url for the xkcd comic containing <search term>"
+	}
+	return ""
+}
+
 func (x *XKCDPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 

@@ -58,6 +58,19 @@ func (cp *ConfigPlugin) Register(cl *IRCClient) {
 func (cp *ConfigPlugin) String() string {
 	return "conf"
 }
+
+func (cp *ConfigPlugin) Usage(cmd string) string {
+	switch cmd {
+	case "version":
+		return "version: prints the current version number"
+	case "source":
+		return "source: prints the current url of the source of this bot"
+	case "writeconf":
+		return "writeconf: writes in-memory config options to disk"
+	}
+	return ""
+}
+
 func (cp *ConfigPlugin) ProcessLine(msg *IRCMessage) {
 	// Empty
 }

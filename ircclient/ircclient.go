@@ -329,6 +329,19 @@ func (ic *IRCClient) GetPlugin(name string) (Plugin, bool) {
 	return ic.plugins.GetPlugin(name)
 }
 
+
+// Get the Usage string from the Plugin that has registered itself as handler for
+// the Command cmd. we need to wrap this to ircclient because the handlers are not
+// public, and GetPlugin doesn't help us either, because the plugin<->command mapping
+// is not known
+func (ic *IRCClient) GetUsage(cmd string) string {
+	plugin, exists := ic.handlers[cmd]
+	if !exists {
+		return "no such command"
+	}
+	return plugin.Handler.Usage(cmd)
+}
+
 // Sends a reply to a parsed message from a user. This is mostly intended for plugins
 // and will automatically distinguish between channel and query messages. Note: Notice
 // replies will currently be sent to the client using PRIVMSG, this may change in the
