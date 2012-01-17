@@ -11,6 +11,7 @@ import (
 	"json"
 	"rand"
 	"time"
+	"sync"
 )
 
 type comic struct {
@@ -18,8 +19,8 @@ type comic struct {
 	Title string
 }
 
-func getCurrentComic() int {
-	response, _ := http.Get("http://xkcd.com/info.0.json")
+func getCurrentComic(xkcdClient *http.Client) int {
+	response, _ := xkcdClient.Get("http://xkcd.com/info.0.json")
 	if response.StatusCode != 200 {
 		return 0
 	}
@@ -31,11 +32,11 @@ func getCurrentComic() int {
 	return c.Num
 }
 
-func (c *comic) readJSON(number int) (err os.Error) {
+func (c *comic) readJSON(number int, xkcdClient *http.Client) (err os.Error) {
 	raw, err := ioutil.ReadFile(fmt.Sprintf("comics/%v.json", number))
 	if err != nil {
-		if downloadJSON(number) {
-			err = c.readJSON(number)
+		if downloadJSON(number, xkcdClient) {
+			err = c.readJSON(number, xkcdClient)
 		}
 		return
 	}
@@ -43,7 +44,7 @@ func (c *comic) readJSON(number int) (err os.Error) {
 	return
 }
 
-func downloadJSON(number int) bool {
+func downloadJSON(number int, xkcdClient *http.Client) bool {
 	url := fmt.Sprintf("http://xkcd.com/%v/info.0.json", number)
 	response, _ := http.Get(url)
 	if response.StatusCode != 200 {
@@ -101,13 +102,18 @@ type XKCDPlugin struct {
 	maxComic int
 	comics []comic
 	lastUpdate *time.Time
+	// Needed, because fetch is done in parallel
+	mutex sync.Mutex
 }
 
 func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
-	var err os.Error
 	x.ic = cl
-	x.ic.RegisterCommandHandler("xkcd", 0, 0, x)
-	x.maxComic = getCurrentComic()
+
+	var err os.Error
+	var client http.Client
+
+	x.mutex.Lock()
+	x.maxComic = getCurrentComic(&client)
 	if x.maxComic == 0 {
 		if x.maxComic, err = x.ic.GetIntOption("XKCD", "maxComic"); err != nil {
 			x.maxComic = 0
@@ -118,17 +124,22 @@ func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
 	if err = os.MkdirAll("comics", 0755); err != nil {
 		log.Fatalln(err)
 	}
-	for i := 1; i <= x.maxComic; i++ {
-		var c comic
-		if err := c.readJSON(i); err == nil {
-			x.comics = append(x.comics, c)
+	// Fetch the comics in parallel
+	go func() {
+		for i := 1; i <= x.maxComic; i++ {
+			var c comic
+			if err := c.readJSON(i, &client); err == nil {
+				x.comics = append(x.comics, c)
+			}
 		}
-	}
-	x.lastUpdate = time.LocalTime()
+		x.lastUpdate = time.LocalTime()
+		x.mutex.Unlock()
+	}()
+	x.ic.RegisterCommandHandler("xkcd", 0, 0, x)
 }
 
 func (x *XKCDPlugin) updateComics() {
-	newMax := getCurrentComic()
+	newMax := getCurrentComic(&http.Client{})
 	var err os.Error
 	if newMax == 0 {
 		if newMax, err = x.ic.GetIntOption("XKCD", "maxComic"); err != nil {
@@ -141,7 +152,7 @@ func (x *XKCDPlugin) updateComics() {
 	x.ic.SetIntOption("XKCD", "maxComic", newMax)
 	for i := x.maxComic; i <= newMax; i++ {
 		var c comic
-		if err = c.readJSON(i); err == nil {
+		if err = c.readJSON(i, &http.Client{}); err == nil {
 			x.comics = append(x.comics, c)
 		}
 	}
@@ -160,6 +171,8 @@ func (x *XKCDPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (x *XKCDPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
+	x.mutex.Lock()
+	defer x.mutex.Unlock()
 	var number int
 	if len(cmd.Args) == 0 {
 		number = x.randomComic()
