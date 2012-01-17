@@ -15,7 +15,7 @@ import (
 )
 
 type comic struct {
-	Num int
+	Num   int
 	Title string
 }
 
@@ -98,9 +98,9 @@ func (x *XKCDPlugin) matchingComic(args []string) int {
 }
 
 type XKCDPlugin struct {
-	ic *ircclient.IRCClient
-	maxComic int
-	comics []comic
+	ic         *ircclient.IRCClient
+	maxComic   int
+	comics     []comic
 	lastUpdate *time.Time
 	// Needed, because fetch is done in parallel
 	mutex sync.Mutex
@@ -157,7 +157,6 @@ func (x *XKCDPlugin) updateComics() {
 		}
 	}
 }
-
 
 func (x *XKCDPlugin) String() string {
 	return "xkcd"
