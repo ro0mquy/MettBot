@@ -6,10 +6,11 @@ import (
 	"log"
 	"bufio"
 	"strings"
+	"strconv"
 )
 
 type ircConn struct {
-	conn    *net.TCPConn
+	conn    net.Conn
 	bio     *bufio.ReadWriter
 	tmgr    *throttleIrcu
 	done    chan bool
@@ -25,18 +26,40 @@ func NewircConn() *ircConn {
 }
 
 func (ic *ircConn) Connect(hostport string) os.Error {
-	ic.conn.SetTimeout(1)
-	if len(hostport) == 0 {
-		return os.NewError("empty server addr, not connecting")
+	if len(os.Args) > 1 {
+		// we're coming from kexec
+		fd, err := strconv.Atoi(os.Args[1])
+		if err != nil {
+			log.Fatal("unable to parse argv[1]" + err.String())
+		}
+		file := os.NewFile(fd, "conn")
+		conn, err := net.FileConn(file)
+		if err != nil {
+			log.Fatal("unable to recover conn: " + err.String())
+		}
+		ic.conn = conn
+		//_, p := unsafe.Reflect(conn)
+		//iconn := unsafe.Unreflect(new(net.TCPConn), p)
+		//tcpconn, cast_err := iconn.(*net.TCPConn)
+		//if cast_err {
+		//	log.Fatal("unable to cast conn")
+		//}
+		//ic.conn = tcpconn
+	} else {
+		if len(hostport) == 0 {
+			return os.NewError("empty server addr, not connecting")
+		}
+		if ic.conn != nil {
+			log.Printf("warning: already connected")
+		}
+		c, err := net.Dial("tcp", hostport)
+		if err != nil {
+			return err
+		}
+		ic.conn = c
 	}
-	if ic.conn != nil {
-		log.Printf("warning: already connected to " + ic.conn.RemoteAddr().String())
-	}
-	c, err := net.Dial("tcp", hostport)
-	if err != nil {
-		return err
-	}
-	ic.conn, _ = c.(*net.TCPConn)
+	// from here on, we're on same behaviour again
+
 	ic.bio = bufio.NewReadWriter(bufio.NewReader(ic.conn), bufio.NewWriter(ic.conn))
 
 	go func() {
@@ -69,7 +92,7 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 				s = s + "\r\n"
 				ic.tmgr.WaitSend(s)
 				log.Print(">> " + s)
-				if _, err = ic.bio.WriteString(s); err != nil {
+				if _, err := ic.bio.WriteString(s); err != nil {
 					ic.Err <- os.NewError("ircmessage: send: " + err.String())
 					log.Println("Send failed: " + err.String())
 					ic.Quit()
@@ -86,7 +109,7 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 						ic.tmgr.WaitSend(s)
 						log.Print(">> " + s)
 						// Do no more error handling here
-						if _, err = ic.bio.WriteString(s); err != nil {
+						if _, err := ic.bio.WriteString(s); err != nil {
 							ic.flushed <- true
 							return
 						}

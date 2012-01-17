@@ -8,6 +8,7 @@ import (
 
 func main() {
 	s := ircclient.NewIRCClient("go-faui2k11.cfg")
+	s.RegisterPlugin(new(plugins.KexecPlugin))
 	s.RegisterPlugin(new(plugins.ListPlugins))
 	s.RegisterPlugin(plugins.NewLoggerPlugin("irclogs"))
 	s.RegisterPlugin(new(plugins.LecturePlugin))
