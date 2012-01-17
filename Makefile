@@ -1,43 +1,11 @@
-## warning: you need go-gb, which does all the work
-## see http://code.google.com/p/go-gb/
-## this Makefile only calls it apropriately
+GFLAGS+=-I $(realpath plugins) -I $(realpath ircclient)
+GLFLAGS+=-L $(realpath plugins) -L $(realpath ircclient)
+CLEANFILES=ircmain
 
-## find go-gb binary name..
-ifneq (,$(shell which go-gb 2>/dev/null))
-	GB = go-gb
-else
-	GB = gb
-endif
+ircmain:
 
-GB_VERBOSE = -v
+ircmain.6: plugins/ ircclient/ 
 
-GB += $(GB_VERBOSE)
+plugins/: ircclient/
 
-all: go-faui2k11
-
-go-faui2k11:
-	$(GB) .
-
-clean:
-	$(GB) -c .
-
-nuke:
-	$(GB) -N .
-
-format:
-	$(GB) --gofmt .
-
-## these are only called by hand, actually go-gb does all the work
-plugins:
-	$(MAKE) -C plugins
-
-plugins_test:
-	$(MAKE) -C plugins test
-
-ircclient:
-	$(MAKE) -C ircclient
-
-ircclient_test:
-	$(MAKE) -C ircclient test
-
-.PHONY: all
+.DEFAULT: ircmain
