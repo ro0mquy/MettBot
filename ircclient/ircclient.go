@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 	"fmt"
+	"net"
 )
 
 type IRCClient struct {
@@ -195,6 +196,7 @@ func (ic *IRCClient) Connect() os.Error {
 	if e != nil {
 		return e
 	}
+
 	ic.conn.Output <- "NICK " + ic.GetStringOption("Server", "nick")
 	ic.conn.Output <- "USER " + ic.GetStringOption("Server", "ident") + " * Q :" + ic.GetStringOption("Server", "realname")
 	nick := ic.GetStringOption("Server", "nick")
@@ -354,4 +356,11 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 		target = strings.SplitN(cmd.Source, "!", 2)[0]
 	}
 	ic.SendLine("PRIVMSG " + target + " :" + message)
+}
+
+
+// Returns the connection object, needed by the kexec function for the fd number
+func (ic *IRCClient) GetConn() *net.TCPConn {
+	// ic.conn is *ircConn
+	return ic.conn.conn
 }
