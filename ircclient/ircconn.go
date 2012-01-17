@@ -15,6 +15,7 @@ type ircConn struct {
 	tmgr    *throttleIrcu
 	done    chan bool
 	flushed chan bool
+	sockfd  int
 
 	Err    chan os.Error
 	Output chan string
@@ -39,6 +40,7 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 			log.Fatal("unable to recover conn: " + err.String())
 		}
 		ic.conn = conn
+		ic.sockfd = fd
 	} else {
 		if len(hostport) == 0 {
 			return os.NewError("empty server addr, not connecting")
@@ -51,6 +53,13 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 			return err
 		}
 		ic.conn = c
+		tcpconn, _ := c.(*net.TCPConn)
+		file, ferr := tcpconn.File()
+		if ferr != nil {
+			log.Fatal("Unable to get socket fd: " + ferr.String())
+			return nil
+		}
+		ic.sockfd = file.Fd()
 	}
 	// from here on, we're on same behaviour again
 
@@ -132,4 +141,8 @@ func (ic *ircConn) Quit() {
 	close(ic.Input)
 	ic.conn.Close()
 	ic.Err <- os.NewError("Connection closed by user")
+}
+
+func (ic *ircConn) GetSocket() int {
+	return ic.sockfd
 }

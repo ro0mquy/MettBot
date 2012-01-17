@@ -8,7 +8,6 @@ import (
 	"log"
 	"strings"
 	"fmt"
-	"net"
 )
 
 type IRCClient struct {
@@ -366,7 +365,7 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 
 
 // Returns the connection object, needed by the kexec function for the fd number
-func (ic *IRCClient) GetConn() net.Conn {
+func (ic *IRCClient) GetConn() *ircConn {
 	// ic.conn is *ircConn
-	return ic.conn.conn
+	return ic.conn
 }
