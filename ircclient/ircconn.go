@@ -34,13 +34,13 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 			log.Fatal("unable to parse argv[1]" + err.String())
 		}
 		file := os.NewFile(fd, "conn")
+		ic.sockfd = file.Fd()
 		conn, err := net.FileConn(file)
 		if err != nil {
 			log.Println("Connection fd is: " + strconv.Itoa(fd))
 			log.Fatal("unable to recover conn: " + err.String())
 		}
 		ic.conn = conn
-		ic.sockfd = fd
 	} else {
 		if len(hostport) == 0 {
 			return os.NewError("empty server addr, not connecting")
