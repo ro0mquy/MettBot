@@ -21,7 +21,7 @@ func (bp *basicProtocol) Register(cl *IRCClient) {
 	// server connection
 	go func() {
 		for {
-			sleep := time.NewTimer(120e9)
+			sleep := time.NewTimer(30 * 60e9)
 			select {
 			case _ = <-bp.done:
 				return
