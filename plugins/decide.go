@@ -60,7 +60,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		return
 	}
 	cmd := ircclient.ParseCommand(msg)
-	if strings.Index(cmd.Source, "cl-fau2k9") == 0 && msg.Command == "PRIVMSG" {
+	if strings.Index(cmd.Source, "cl-faui2k9") == 0 && msg.Command == "PRIVMSG" {
 		if d.done {
 			select {
 			case d.current = <-d.requests:
