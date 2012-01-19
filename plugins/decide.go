@@ -5,12 +5,13 @@ import (
 	"ircclient"
 	"rand"
 	"log"
-	"fmt" ///////////////////////i
+	"time"
 )
 
 type DecidePlugin struct {
 	ic *ircclient.IRCClient
 	requests chan *ircclient.IRCMessage
+	boolchans chan chan bool
 	current *ircclient.IRCMessage
 	done bool
 }
@@ -19,6 +20,7 @@ func (d *DecidePlugin) Register(cl *ircclient.IRCClient) {
 	d.done = true
 	d.ic = cl
 	d.requests = make(chan *ircclient.IRCMessage, 64)
+	d.boolchans = make(chan chan bool, 64)
 }
 
 func (d *DecidePlugin) String() string {
@@ -34,26 +36,42 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		return
 	}
 	if strings.Index(msg.Args[len(msg.Args) - 1], "!decide") == 0 {
-		fmt.Println("push")
 		d.requests <- msg
+		go func() {
+			newChan := make(chan bool)
+			d.boolchans <- newChan
+			t := time.NewTimer(1e10) //time.AfterFunc(1e10, func () { } )
+			select {
+			case _ = <-newChan:
+			case _ = <-t.C:
+				_ = <-d.boolchans
+				cmd := ircclient.ParseCommand(msg)
+				if len(cmd.Args) <= 1 {
+					if rand.Intn(2) == 0 {
+						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0] + ": Yes")
+					} else {
+						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0] + ": No")
+					}
+				} else {
+					d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0] + ": " + cmd.Args[rand.Intn(len(cmd.Args))])
+				}
+			}
+		} ()
 		return
 	}
 	cmd := ircclient.ParseCommand(msg)
-	if strings.Index(cmd.Source, "cl-faui2k9") == 0 && msg.Command == "PRIVMSG" {
+	if strings.Index(cmd.Source, "cl-fau2k9") == 0 && msg.Command == "PRIVMSG" {
 		if d.done {
 			select {
 			case d.current = <-d.requests:
 				d.done = false
-				fmt.Println("pop")
 			default:
-				fmt.Println("default")
 			}
 		}
 		if !d.done {
 			current := ircclient.ParseCommand(d.current)
-			fmt.Println("not done")
-
 			if strings.Split(d.current.Source, "!")[0] == strings.Split(cmd.Command, ":")[0] {
+				(<-d.boolchans) <- true
 				if len(cmd.Args) == 0 {
 					log.Println("cl-faui2k11 gibt leere Antwort")
 					d.done = true
@@ -66,7 +84,6 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 					case "No":
 						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": Yes")
 					default:
-						fmt.Println("uiae")
 					}
 				} else {
 					var i int

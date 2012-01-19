@@ -4,9 +4,12 @@ import (
 	"ircclient"
 	"log"
 	"plugins"
+	"time"
+	"rand"
 )
 
 func main() {
+	rand.Seed(time.Nanoseconds())
 	s := ircclient.NewIRCClient("go-faui2k11.cfg")
 	s.RegisterPlugin(new(plugins.KexecPlugin))
 	s.RegisterPlugin(new(plugins.ListPlugins))
