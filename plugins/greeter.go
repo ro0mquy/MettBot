@@ -24,7 +24,7 @@ func (g *Greeter) Info() string {
 }
 
 func (g *Greeter) ProcessLine(msg *ircclient.IRCMessage) {
-	if msg.Command != "JOIN" { // TODO: numeric command
+	if msg.Command != "JOIN" {
 		return
 	}
 	just_nick := strings.SplitN(msg.Source, "!", 2)[0]
