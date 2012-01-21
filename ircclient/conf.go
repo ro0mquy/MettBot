@@ -85,7 +85,7 @@ func (cp *ConfigPlugin) Info() string {
 func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 	switch cmd.Command {
 	case "version":
-		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.03")
+		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.04")
 	case "writeconf":
 		cp.lock.Lock()
 		cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")
