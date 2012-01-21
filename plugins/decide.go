@@ -79,7 +79,6 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 					return
 				}
 				reply[1] = strings.TrimLeft(reply[1], " ")
-				log.Println(reply[1])
 				if len(current.Args) <= 1 {
 					switch reply[1] {
 					case "Yes":
