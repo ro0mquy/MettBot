@@ -15,7 +15,6 @@ type ircConn struct {
 	tmgr    *throttleIrcu
 	done    chan bool
 	flushed chan bool
-	sockfd  int
 
 	Err    chan os.Error
 	Output chan string
@@ -27,14 +26,12 @@ func NewircConn() *ircConn {
 }
 
 func (ic *ircConn) Connect(hostport string) os.Error {
-	if len(os.Args) > 1 {
-		// we're coming from kexec
+	if len(os.Args) > 1 { // we're coming from kexec
 		fd, err := strconv.Atoi(os.Args[1])
 		if err != nil {
 			log.Fatal("unable to parse argv[1]" + err.String())
 		}
 		file := os.NewFile(fd, "conn")
-		ic.sockfd = file.Fd()
 		conn, err := net.FileConn(file)
 		if err != nil {
 			log.Println("Connection fd is: " + strconv.Itoa(fd))
@@ -53,13 +50,6 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 			return err
 		}
 		ic.conn = c
-		tcpconn, _ := c.(*net.TCPConn)
-		file, ferr := tcpconn.File()
-		if ferr != nil {
-			log.Fatal("Unable to get socket fd: " + ferr.String())
-			return nil
-		}
-		ic.sockfd = file.Fd()
 	}
 	// from here on, we're on same behaviour again
 
@@ -144,5 +134,20 @@ func (ic *ircConn) Quit() {
 }
 
 func (ic *ircConn) GetSocket() int {
-	return ic.sockfd
+	tcpconn, success := ic.conn.(*net.TCPConn)
+	if success {
+		file, ferr := tcpconn.File()
+		if ferr != nil {
+			log.Fatal("Unable to get socket fd: " + ferr.String())
+			return -1
+		}
+		fd := file.Fd();
+		return fd
+	}
+
+	// else...
+	log.Fatal("Can't cast TCPConn!")
+	os.Exit(1)
+
+	return -1 // TODO
 }

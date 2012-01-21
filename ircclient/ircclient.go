@@ -364,8 +364,7 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 }
 
 
-// Returns the connection object, needed by the kexec function for the fd number
-func (ic *IRCClient) GetConn() *ircConn {
-	// ic.conn is *ircConn
-	return ic.conn
+// Returns socket fd. Needed for kexec
+func (ic *IRCClient) GetSocket() int {
+	return ic.conn.GetSocket()
 }
