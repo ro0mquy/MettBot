@@ -60,7 +60,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		return
 	}
 	cmd := ircclient.ParseCommand(msg)
-	if strings.Index(cmd.Source, "cl-faui2k9") == 0 && msg.Command == "PRIVMSG" {
+	if strings.Index(msg.Source, "MalteM") == 0 && msg.Command == "PRIVMSG" {
 		if d.done {
 			select {
 			case d.current = <-d.requests:
@@ -70,15 +70,18 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		}
 		if !d.done {
 			current := ircclient.ParseCommand(d.current)
-			if strings.Split(d.current.Source, "!")[0] == strings.Split(cmd.Command, ":")[0] {
+			reply := strings.Split(msg.Args[0], ":")
+			if strings.Split(d.current.Source, "!")[0] == reply[0] {
 				(<-d.boolchans) <- true
-				if len(cmd.Args) == 0 {
+				if len(reply) == 1 {
 					log.Println("cl-faui2k11 gibt leere Antwort")
 					d.done = true
 					return
 				}
+				reply[1] = strings.TrimLeft(reply[1], " ")
+				log.Println(reply[1])
 				if len(current.Args) <= 1 {
-					switch cmd.Args[0] {
+					switch reply[1] {
 					case "Yes":
 						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": No")
 					case "No":
@@ -88,7 +91,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 				} else {
 					var i int
 					for i = 0; i < len(current.Args); i++ {
-						if current.Args[i] == cmd.Args[0] {
+						if current.Args[i] == reply[1] {
 							break
 						}
 					}
