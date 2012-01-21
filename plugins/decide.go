@@ -60,7 +60,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		return
 	}
 	cmd := ircclient.ParseCommand(msg)
-	if strings.Index(msg.Source, "MalteM") == 0 && msg.Command == "PRIVMSG" {
+	if strings.Index(msg.Source, "cl-faui2k9") == 0 && msg.Command == "PRIVMSG" {
 		if d.done {
 			select {
 			case d.current = <-d.requests:
@@ -74,7 +74,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 			if strings.Split(d.current.Source, "!")[0] == reply[0] {
 				(<-d.boolchans) <- true
 				if len(reply) == 1 {
-					log.Println("cl-faui2k11 gibt leere Antwort")
+					log.Println("cl-faui2k9 gibt leere Antwort")
 					d.done = true
 					return
 				}
