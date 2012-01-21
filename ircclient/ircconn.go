@@ -10,7 +10,7 @@ import (
 )
 
 type ircConn struct {
-	conn    net.Conn
+	conn    *net.TCPConn
 	bio     *bufio.ReadWriter
 	tmgr    *throttleIrcu
 	done    chan bool
@@ -37,7 +37,7 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 			log.Println("Connection fd is: " + strconv.Itoa(fd))
 			log.Fatal("unable to recover conn: " + err.String())
 		}
-		ic.conn = conn
+		ic.conn, _ = conn.(*net.TCPConn)
 	} else {
 		if len(hostport) == 0 {
 			return os.NewError("empty server addr, not connecting")
@@ -49,7 +49,7 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 		if err != nil {
 			return err
 		}
-		ic.conn = c
+		ic.conn, _ = c.(*net.TCPConn)
 	}
 	// from here on, we're on same behaviour again
 
@@ -134,20 +134,11 @@ func (ic *ircConn) Quit() {
 }
 
 func (ic *ircConn) GetSocket() int {
-	tcpconn, success := ic.conn.(*net.TCPConn)
-	if success {
-		file, ferr := tcpconn.File()
-		if ferr != nil {
-			log.Fatal("Unable to get socket fd: " + ferr.String())
-			return -1
-		}
-		fd := file.Fd();
-		return fd
+	file, ferr := ic.conn.File()
+	if ferr != nil {
+		log.Fatal("Unable to get socket fd: " + ferr.String())
+		return -1
 	}
-
-	// else...
-	log.Fatal("Can't cast TCPConn!")
-	os.Exit(1)
-
-	return -1 // TODO
+	fd := file.Fd();
+	return fd
 }
