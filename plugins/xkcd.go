@@ -80,6 +80,9 @@ func (x *XKCDPlugin) matchingComic(args []string) int {
 	}
 	numbers := make([]int, 0, 10)
 	for _, c := range x.comics {
+		if len(args) == 1 && strings.ToLower(c.Title) == strings.ToLower(args[0]) {
+			return c.Num
+		}
 		contains := true
 		for _, a := range args {
 			contains = contains && c.titleContains(a)
