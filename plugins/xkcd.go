@@ -17,6 +17,7 @@ import (
 type comic struct {
 	Num   int
 	Title string
+	Transcript string
 }
 
 func getCurrentComic(xkcdClient *http.Client) int {
@@ -59,6 +60,10 @@ func (c *comic) titleContains(text string) bool {
 	return strings.Contains(strings.ToLower(c.Title), strings.ToLower(text))
 }
 
+func (c *comic) transcriptContains(text string) bool {
+	return strings.Contains(strings.ToLower(c.Transcript), strings.ToLower(text))
+}
+
 // randomComic returns a comic number between 1 and x.maxComic (inclusive) except 404.
 func (x *XKCDPlugin) randomComic() int {
 	r := rand.Intn(x.maxComic - 1)
@@ -72,7 +77,8 @@ const prob404 float32 = 0.5
 
 // matchingComic returns the number of a comic that contains all of the strings in args.
 // If no comic is found, it returns -1 or 404.
-func (x *XKCDPlugin) matchingComic(args []string) int {
+
+func (x *XKCDPlugin) matchingComicTitle(args []string) int {
 	currentTime := time.LocalTime()
 	if currentTime.Day != x.lastUpdate.Day || currentTime.Month != x.lastUpdate.Month || currentTime.Year != x.lastUpdate.Year {
 		x.updateComics()
@@ -86,6 +92,34 @@ func (x *XKCDPlugin) matchingComic(args []string) int {
 		contains := true
 		for _, a := range args {
 			contains = contains && c.titleContains(a)
+		}
+		if contains {
+			numbers = append(numbers, c.Num)
+		}
+	}
+	if len(numbers) == 0 {
+		if rand.Float32() < prob404 {
+			return 404
+		}
+		return -1
+	}
+	return numbers[rand.Intn(len(numbers))]
+}
+
+func (x *XKCDPlugin) matchingComicAll(args []string) int {
+	currentTime := time.LocalTime()
+	if currentTime.Day != x.lastUpdate.Day || currentTime.Month != x.lastUpdate.Month || currentTime.Year != x.lastUpdate.Year {
+		x.updateComics()
+		x.lastUpdate = currentTime
+	}
+	numbers := make([]int, 0, 10)
+	for _, c := range x.comics {
+		if len(args) == 1 && strings.ToLower(c.Title) == strings.ToLower(args[0]) {
+			return c.Num
+		}
+		contains := true
+		for _, a := range args {
+			contains = contains && (c.titleContains(a) || c.transcriptContains(a))
 		}
 		if contains {
 			numbers = append(numbers, c.Num)
@@ -138,6 +172,7 @@ func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
 		x.lastUpdate = time.LocalTime()
 		x.mutex.Unlock()
 	}()
+	x.ic.RegisterCommandHandler("x", 0, 0, x)
 	x.ic.RegisterCommandHandler("xkcd", 0, 0, x)
 }
 
@@ -187,7 +222,12 @@ func (x *XKCDPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	if len(cmd.Args) == 0 {
 		number = x.randomComic()
 	} else {
-		number = x.matchingComic(cmd.Args)
+		switch cmd.Command {
+		case "x":
+			number = x.matchingComicTitle(cmd.Args)
+		case "xkcd":
+			number = x.matchingComicAll(cmd.Args)
+		}
 	}
 	if number == -1 {
 		x.ic.Reply(cmd, "Sorry, didn’t find a matching comic.")
