@@ -1,12 +1,8 @@
 immer:
 * grep TODO */*.go
 
-0.02:
-* plugin-infrastruktur umbauen, list_commands
-* trigger: s/byte/unicode rune
-
-irgendwann:
-* nachfolge von !decide
+demnächst:
+* xkcd alle passenden Comics rausgeben lassen. Aber nur im qry, im Channel max. 3 (?)
 
 will_man_das?:
 * \google oder \lmgtfy
