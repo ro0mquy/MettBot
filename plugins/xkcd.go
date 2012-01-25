@@ -206,8 +206,10 @@ func (x *XKCDPlugin) Info() string {
 
 func (x *XKCDPlugin) Usage(cmd string) string {
 	switch cmd {
+	case "x":
+		return "x <search term>: returns the url for an xkcd comic with title containing <search term>"
 	case "xkcd":
-		return "xkcd <search term>: returns the url for the xkcd comic containing <search term>"
+		return "xkcd <search term>: returns the url for an xkcd comic containing <search term>"
 	}
 	return ""
 }
