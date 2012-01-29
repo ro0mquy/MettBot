@@ -28,6 +28,10 @@ func (q *QDevoicePlugin) Usage(cmd string) string {
 }
 
 func (q *QDevoicePlugin) ProcessLine(msg *ircclient.IRCMessage) {
+	if len(msg.Args) >= 1 && strings.SplitN(msg.Args[0], " ", 2)[0] == "!q" && strings.Index(msg.Source, "siccegge") == 0 {
+		line := fmt.Sprintf("MODE %s +v siccegge", msg.Target, "siccegge")
+		q.ic.SendLine(line)
+	}
 	if strings.Index(msg.Source, "cl-faui2k9") == 0 && msg.Command == "MODE" &&
 		msg.Args[0] == "+v" && len(msg.Args) > 1 {
 		line := fmt.Sprintf("MODE %s -v :%s", msg.Target, msg.Args[1])
