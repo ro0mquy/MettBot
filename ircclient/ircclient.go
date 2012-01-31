@@ -5,14 +5,13 @@ package ircclient
 
 import (
 	"os"
-	"log"
 	"strings"
 	"fmt"
 )
 
 type IRCClient struct {
 	conn       *ircConn
-	plugins    *pluginStack
+	plugins    map[string]Plugin
 	handlers   map[string]handler
 	disconnect chan bool
 }
@@ -28,7 +27,7 @@ type handler struct {
 // It will not connect to the given server until Connect() has been called,
 // so you can register plugins before connecting
 func NewIRCClient(configfile string) *IRCClient {
-	c := &IRCClient{nil, newPluginStack(), make(map[string]handler), make(chan bool)}
+	c := &IRCClient{nil, make(map[string]Plugin), make(map[string]handler), make(chan bool)}
 	c.RegisterPlugin(&basicProtocol{})
 	c.RegisterPlugin(NewConfigPlugin(configfile))
 	c.RegisterPlugin(new(authPlugin))
@@ -39,11 +38,11 @@ func NewIRCClient(configfile string) *IRCClient {
 // the actual connection attempt. The plugin's Unregister() function will already
 // be called when the connection is lost.
 func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
-	if _, ok := ic.plugins.GetPlugin(p.String()); ok == true {
+	if _, ok := ic.plugins[p.String()]; ok == true {
 		return os.NewError("Plugin already exists")
 	}
 	p.Register(ic)
-	ic.plugins.Push(p)
+	ic.plugins[p.String()] = p
 	return nil
 }
 
@@ -71,10 +70,7 @@ func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minac
 // empty string if the option is empty, this means: you currently can't
 // use empty config values - they will be deemed non-existent!
 func (ic *IRCClient) GetStringOption(section, option string) string {
-	c, _ := ic.GetPlugin("conf")
-	if c == nil {
-		log.Fatal("wtf?")
-	}
+	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
 	retval, _ := cf.Conf.String(section, option)
@@ -85,7 +81,7 @@ func (ic *IRCClient) GetStringOption(section, option string) string {
 // Sets a single config option. Existing parameters are overriden,
 // if necessary, a new config section is automatically added.
 func (ic *IRCClient) SetStringOption(section, option, value string) {
-	c, _ := ic.GetPlugin("conf")
+	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
 	if ! cf.Conf.HasSection(section) {
@@ -101,7 +97,7 @@ func (ic *IRCClient) SetStringOption(section, option, value string) {
 // Removes a single config option. Note: This does not delete the section,
 // even if it's empty.
 func (ic *IRCClient) RemoveOption(section, option string) {
-	c, _ := ic.GetPlugin("conf")
+	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
 	defer cf.Unlock()
@@ -119,7 +115,7 @@ func (ic *IRCClient) RemoveOption(section, option string) {
 // exists, it is automatically added when calling one of the SetOption()
 // methods.
 func (ic *IRCClient) GetOptions(section string) []string {
-	c, _ := ic.GetPlugin("conf")
+	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
 	defer cf.Unlock()
@@ -133,7 +129,7 @@ func (ic *IRCClient) GetOptions(section string) []string {
 // Does the same as GetStringOption(), but with integers. Returns an os.Error,
 // if the given config option does not exist.
 func (ic *IRCClient) GetIntOption(section, option string) (int, os.Error) {
-	c, _ := ic.GetPlugin("conf")
+	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
 	defer cf.Unlock()
@@ -146,7 +142,7 @@ func (ic *IRCClient) GetIntOption(section, option string) (int, os.Error) {
 
 // See SetStringOption()
 func (ic *IRCClient) SetIntOption(section, option string, value int) {
-	c, _ := ic.GetPlugin("conf")
+	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
 	defer cf.Unlock()
@@ -162,7 +158,7 @@ func (ic *IRCClient) SetIntOption(section, option string, value int) {
 // the mask against all authorization entries. Default return value is 0
 // (no access).
 func (ic *IRCClient) GetAccessLevel(host string) int {
-	a, _ := ic.GetPlugin("auth")
+	a := ic.plugins["auth"]
 	auth, _ := a.(*authPlugin)
 	return auth.GetAccessLevel(host)
 }
@@ -171,7 +167,7 @@ func (ic *IRCClient) GetAccessLevel(host string) int {
 // be a regular expression, if exactly the same expression is already present
 // in the database, it is overridden.
 func (ic *IRCClient) SetAccessLevel(host string, level int) {
-	a, _ := ic.GetPlugin("auth")
+	a := ic.plugins["auth"]
 	auth, _ := a.(*authPlugin)
 	auth.SetAccessLevel(host, level )
 }
@@ -180,7 +176,7 @@ func (ic *IRCClient) SetAccessLevel(host string, level int) {
 // has to be exactly the string stored in the database, otherwise, the command
 // will have no effect.
 func (ic *IRCClient) DelAccessLevel(host string) {
-	a, _ := ic.GetPlugin("auth")
+	a := ic.plugins["auth"]
 	auth, _ := a.(*authPlugin)
 	auth.DelAccessLevel(host)
 }
@@ -220,7 +216,7 @@ func (ic *IRCClient) Connect() os.Error {
 		if s == nil {
 			continue
 		}
-		for p := range ic.plugins.Iter() {
+		for _, p := range ic.plugins {
 			go p.ProcessLine(s)
 		}
 
@@ -254,7 +250,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	}
 
 	// Call line handlers
-	for p := range ic.plugins.Iter() {
+	for _, p := range ic.plugins {
 		go p.ProcessLine(s)
 	}
 
@@ -306,16 +302,9 @@ func (ic *IRCClient) SendLine(line string) {
 }
 
 func (ic *IRCClient) shutdown() {
-	for ic.plugins.Size() != 0 {
-		p := ic.plugins.Pop()
+	for _, p := range ic.plugins {
 		p.Unregister()
 	}
-}
-
-// Returns a channel on which all plugins will be sent. Use it to iterate over all registered
-// plugins.
-func (ic *IRCClient) IterPlugins() <-chan Plugin {
-	return ic.plugins.Iter()
 }
 
 // Returns a channel on which all command handlers will be sent.
@@ -332,8 +321,8 @@ func (ic *IRCClient) IterHandlers() <-chan handler {
 
 // Get the pointer to a specific plugin that has been registered using RegisterPlugin()
 // Name is the name the plugin identifies itself with when String() is called on it.
-func (ic *IRCClient) GetPlugin(name string) (Plugin, bool) {
-	return ic.plugins.GetPlugin(name)
+func (ic *IRCClient) GetPlugin(name string) Plugin {
+	return ic.plugins[name]
 }
 
 
@@ -367,4 +356,8 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 // Returns socket fd. Needed for kexec
 func (ic *IRCClient) GetSocket() int {
 	return ic.conn.GetSocket()
+}
+
+func (ic *IRCClient) GetPlugins() map[string]Plugin {
+	return ic.plugins
 }
