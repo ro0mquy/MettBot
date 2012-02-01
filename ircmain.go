@@ -21,6 +21,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.AdminPlugin))
 	s.RegisterPlugin(new(plugins.XKCDPlugin))
 	s.RegisterPlugin(new(plugins.DecidePlugin))
+	s.RegisterPlugin(new(plugins.EvaluationPlugin))
 	ok := s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())
