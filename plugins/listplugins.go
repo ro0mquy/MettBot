@@ -48,7 +48,7 @@ func (lp *ListPlugins) ProcessCommand(cmd *ircclient.IRCCommand) {
 	switch cmd.Command {
 	case "listplugins":
 		a := make([]string, 0)
-		for plug := range lp.ic.IterPlugins() {
+		for _, plug := range lp.ic.GetPlugins() {
 			a = append(a, plug.String())
 		}
 
