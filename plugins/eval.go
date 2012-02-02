@@ -19,7 +19,7 @@ type EvaluationPlugin struct {
 
 func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
-	q.done = make(chan bool)
+	q.done = make(chan bool, 1)
 	// TODO: Configurable
 	addr, err := net.ResolveUDPAddr("udp", "0.0.0.0:5486")
 	if err != nil {
