@@ -6,8 +6,10 @@ import (
 	"bytes"
 	"net"
 	"crypto/hmac"
+	"crypto/rand"
 	"hash"
 	"log"
+	"fmt"
 )
 
 type EvaluationPlugin struct {
@@ -20,8 +22,36 @@ type EvaluationPlugin struct {
 func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
 	q.done = make(chan bool, 1)
-	// TODO: Configurable
-	addr, err := net.ResolveUDPAddr("udp", "0.0.0.0:5486")
+	var hmacKey []byte
+
+	// Read key for HMAC from config
+	if value := q.ic.GetStringOption("Eval", "key"); value == "" {
+		log.Println("WARNING: No HMAC key for evaluation plugin specified")
+		hmacKey = make([]byte, 20)
+		if n, err := rand.Read(hmacKey); n != 20 || err != nil {
+			log.Printf("ERROR: Unable to generate one. Exiting. (%s)", err.String())
+			return
+		}
+		q.ic.SetStringOption("Eval", "key", fmt.Sprintf("%x", hmacKey))
+		log.Println("WARNING: Auto-generated one.")
+	} else {
+		// Hm. This is hackish. Proposals? :-)
+		hmacKey = hmacKey[0:0]
+		for len(value) > 1 {
+			var tmp int
+			fmt.Sscanf(value[0:2], "%x", &tmp)
+			hmacKey = append(hmacKey, uint8(tmp))
+			value = value[2:]
+		}
+	}
+	// Network config
+	var hostport string
+	if hostport = q.ic.GetStringOption("Eval", "hostport"); hostport == "" {
+		log.Println("WARNING: Added default listener for EvaluationPlugin")
+		q.ic.SetStringOption("Eval", "hostport", "0.0.0.0:5486")
+	}
+
+	addr, err := net.ResolveUDPAddr("udp", hostport)
 	if err != nil {
 		log.Println("ERROR: Internal error in EvaluationPlugin")
 		return
@@ -31,7 +61,7 @@ func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 		log.Println("ERROR: Unable to open listener for evaluation plugin")
 		return
 	}
-	q.hmac = hmac.NewSHA1([]byte{'t', 'e', 's', 't'}) // TODO: Configurable
+	q.hmac = hmac.NewSHA1(hmacKey)
 	go func() {
 		buf := make([]byte, 512)
 		for {
