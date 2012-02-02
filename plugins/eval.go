@@ -49,6 +49,13 @@ func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 	if hostport = q.ic.GetStringOption("Eval", "hostport"); hostport == "" {
 		log.Println("WARNING: Added default listener for EvaluationPlugin")
 		q.ic.SetStringOption("Eval", "hostport", "0.0.0.0:5486")
+		hostport = "0.0.0.0:4386"
+	}
+	// Channel
+	var channel string
+	if channel = q.ic.GetStringOption("Eval", "channel"); channel == "" {
+		log.Println("WARNING: No channel set in evaluation plugin options. Please set one.")
+		return
 	}
 
 	addr, err := net.ResolveUDPAddr("udp", hostport)
@@ -88,8 +95,10 @@ func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 			}
 			payload := string(buf[20:n])
 			parts := strings.SplitN(payload, "\t", 3)
-			// TODO: Config where to send data
-			log.Printf("%#v\n", parts)
+			if len(parts) < 3 {
+				continue
+			}
+			q.ic.SendLine("PRIVMSG #" + channel + " :New lecture evaluation has been added in Semester " + parts[0] + ": " + parts[2] + ", " + parts[1])
 		}
 	}()
 }
@@ -115,6 +124,8 @@ func (q *EvaluationPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 
 func (q *EvaluationPlugin) Unregister() {
 	q.done <- true
-	q.c.Close()
+	if q.c != nil {
+		q.c.Close()
+	}
 	return
 }
