@@ -40,6 +40,8 @@ func (kp *KexecPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 
 func (kp *KexecPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	log.Println("Now doing online restart.")
+	kp.ic.Shutdown()
+	log.Println("Plugin unload succeeded")
 	progname := os.Args[0]
 	log.Println("kexec: " + progname)
 	err := syscall.Exec(progname, []string{progname, fmt.Sprintf("%d", kp.ic.GetSocket())}, []string{})

@@ -290,7 +290,7 @@ func (ic *IRCClient) InputLoop() os.Error {
 // and pending messages in queue (e.g. because of floodprotection) will be flushed. This will
 // also make InputLoop() return.
 func (ic *IRCClient) Disconnect(quitmsg string) {
-	ic.shutdown()
+	ic.Shutdown()
 	ic.conn.Output <- "QUIT :" + quitmsg
 	ic.conn.Quit()
 }
@@ -301,7 +301,7 @@ func (ic *IRCClient) SendLine(line string) {
 	ic.conn.Output <- line
 }
 
-func (ic *IRCClient) shutdown() {
+func (ic *IRCClient) Shutdown() {
 	for _, p := range ic.plugins {
 		p.Unregister()
 	}
