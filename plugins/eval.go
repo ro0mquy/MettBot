@@ -98,7 +98,7 @@ func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 			if len(parts) < 3 {
 				continue
 			}
-			q.ic.SendLine("PRIVMSG #" + channel + " :New lecture evaluation has been added in Semester " + parts[0] + ": " + parts[2] + ", " + parts[1])
+			q.ic.SendLine("PRIVMSG #" + channel + " :New lecture evaluation has been added in Semester " + parts[1] + ": " + parts[0] + ", " + parts[2])
 		}
 	}()
 }
