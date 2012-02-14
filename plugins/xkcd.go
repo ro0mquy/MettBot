@@ -26,6 +26,7 @@ func getCurrentComic(xkcdClient *http.Client) int {
 		return 0
 	}
 	content, _ := ioutil.ReadAll(response.Body)
+	response.Body.Close()
 	var c comic
 	if err := json.Unmarshal(content, &c); err != nil {
 		return 0
@@ -53,6 +54,7 @@ func downloadJSON(number int, xkcdClient *http.Client) bool {
 	}
 	content, _ := ioutil.ReadAll(response.Body)
 	ioutil.WriteFile(fmt.Sprintf("comics/%v.json", number), content, 0644)
+	response.Body.Close()
 	return true
 }
 
