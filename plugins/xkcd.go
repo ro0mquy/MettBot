@@ -47,7 +47,7 @@ func (c *comic) readJSON(number int, xkcdClient *http.Client) (err os.Error) {
 
 func downloadJSON(number int, xkcdClient *http.Client) bool {
 	url := fmt.Sprintf("http://xkcd.com/%v/info.0.json", number)
-	response, _ := http.Get(url)
+	response, _ := xkcdClient.Get(url)
 	if response.StatusCode != 200 {
 		return false
 	}
