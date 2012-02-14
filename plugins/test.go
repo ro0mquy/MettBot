@@ -1,7 +1,8 @@
-package plugins
+package main
+
+// Zum Rumspielen mit XML-Parsern. Einfacher, als das in nem Plugin zu machen
 
 import (
-	"ircclient"
 	"http"
 	"fmt"
 	"xml"
@@ -34,12 +35,7 @@ type Judging struct {
 	Result   string `xml:"chardata"`
 }
 
-type HalloWeltPlugin struct {
-	ic *ircclient.IRCClient
-}
-
-func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
-	q.ic = cl
+func main() {
 	var client http.Client
 	//response, _ := client.Get("https://bot:hallowelt@icpc.informatik.uni-erlangen.de/domjudge/plugin/event.php")
 	// Um den DOMJudge nicht uebermaessig in der Entwicklungsphase zu pollen 
@@ -50,25 +46,9 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 	xml.Unmarshal(response.Body, &res)
 	response.Body.Close()
 	fmt.Println(len(res.Events.Event))
-}
-
-func (q *HalloWeltPlugin) String() string {
-	return "hallowelt"
-}
-
-func (q *HalloWeltPlugin) Info() string {
-	return "DomJudge live ticker"
-}
-
-func (q *HalloWeltPlugin) Usage(cmd string) string {
-	return "This plugin provides no commands"
-}
-
-func (q *HalloWeltPlugin) ProcessLine(msg *ircclient.IRCMessage) {
-}
-
-func (q *HalloWeltPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-}
-
-func (q *HalloWeltPlugin) Unregister() {
+	//fmt.Println(res.Events.Event[482].Judging.Result)
+	//for i := 0; i < len(res.Events.Event); i = i + 1 {
+	//	fmt.Println(res.Events.Event[i].Id)
+	//}
+	//fmt.Println(content)
 }
