@@ -43,6 +43,7 @@ type HalloWeltPlugin struct {
 func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
 	var client http.Client
+	q.done = make(chan bool)
 	go func() {
 		for {
 			// TODO: Configurable
