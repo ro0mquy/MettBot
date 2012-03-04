@@ -22,11 +22,12 @@ func main() {
 	s.RegisterPlugin(new(plugins.XKCDPlugin))
 	s.RegisterPlugin(new(plugins.DecidePlugin))
 	s.RegisterPlugin(new(plugins.EvaluationPlugin))
-	s.RegisterPlugin(new(plugins.HalloWeltPlugin))
 	ok := s.Connect()
 	if ok != nil {
 		log.Fatal(ok.String())
 	}
+	// Has to be loaded after successful connection
+	s.RegisterPlugin(new(plugins.HalloWeltPlugin))
 	ok = s.InputLoop()
 	if ok != nil {
 		log.Fatal(ok.String())

@@ -1,7 +1,10 @@
 package plugins
 
+// Important: Register this module _AFTER_ successful connection!
+
 import (
 	"log"
+	"fmt"
 	"ircclient"
 	"http"
 	"xml"
@@ -44,20 +47,31 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
 	var client http.Client
 	q.done = make(chan bool)
-//	go func() {
+	p, err := q.ic.GetIntOption("HalloWelt", "polling")
+	polling := int64(p)
+	channel := q.ic.GetStringOption("HalloWelt", "channel")
+	url := q.ic.GetStringOption("HalloWelt", "url")
+	if err != nil || channel == "" || url == "" {
+		log.Println("WARNING: No complete HalloWelt configuration found. Setting defaults. Please edit your config and reload this plugin")
+		q.ic.SetStringOption("HalloWelt", "channel", "hallowelt")
+		q.ic.SetStringOption("HalloWelt", "url", "https://EDITTHIS")
+		q.ic.SetIntOption("HalloWelt", "polling", 60)
+		go func() {
+			<-q.done
+			q.done <- true
+		}()
+		return
+	}
+	go func() {
 		for {
-			// TODO: Configurable
-			t := time.After(1 * 1e9)
+			t := time.After(polling * 1e9)
 			select {
 			case <- t:
 			case <- q.done:
 			q.done <- true
 			return;
 			}
-			//response, _ := client.Get("https://bot:hallowelt@icpc.informatik.uni-erlangen.de/domjudge/plugin/event.php")
-			// Um den DOMJudge nicht uebermaessig in der Entwicklungsphase zu pollen 
-			// TODO: Konfigurierbar
-			response, err := client.Get("http://d-paulus.de/tmp.xml")
+			response, err := client.Get(url)
 			if response.StatusCode != 200 || err != nil {
 				log.Println("ERROR: (HalloWelt): Unable to get current event list from DomJudge")
 				time.Sleep(120 * 1e9)
@@ -68,12 +82,11 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 			xml.Unmarshal(response.Body, &res)
 			response.Body.Close()
 			last, err := q.ic.GetIntOption("HalloWelt", "last")
-			if err != nil {
-				q.ic.SetIntOption("HalloWelt", "last", len(res.Events.Event))
-			}
-			if last == len(res.Events.Event) {
+			q.ic.SetIntOption("HalloWelt", "last", len(res.Events.Event))
+			if err != nil || last == len(res.Events.Event) {
 				continue
 			}
+			// Report new submissions
 			for i := last; i < len(res.Events.Event); i = i + 1 {
 				ev := res.Events.Event[i].Judging
 				if ev == nil {
@@ -101,11 +114,10 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 					// Ignore invalid input
 					continue
 				}
-				log.Printf("%s solved %s (after %d failed attempts)", team, problem, tries - 1)
+				q.ic.SendLine("PRIVMSG #" + channel + " :" + team + " solved " + problem + " (after " + fmt.Sprintf("%d", tries - 1) + " failed attempts)")
 			}
-			log.Fatal("Bye")
 		}
-//	}()
+	}()
 }
 
 func (q *HalloWeltPlugin) String() string {
