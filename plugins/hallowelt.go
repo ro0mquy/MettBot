@@ -110,7 +110,7 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 						tries = tries + 1
 					}
 				}
-				if tries == 0 {
+				if tries == 0 || team == "DOMjudge" {
 					// Ignore invalid input
 					continue
 				}
