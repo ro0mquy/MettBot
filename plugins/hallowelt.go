@@ -134,12 +134,12 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 						tries = tries + 1
 					}
 				}
+				if q.solved[team] == nil {
+					q.solved[team] = make(map[string]bool)
+				}
 				if tries == 0 || team == "DOMjudge" || q.solved[team][problem] == true {
 					// Ignore invalid input
 					continue
-				}
-				if q.solved[team] == nil {
-					q.solved[team] = make(map[string]bool)
 				}
 				q.solved[team][problem] = true
 				q.ic.SendLine("PRIVMSG #" + channel + " :" + team + " solved " + problem + " (after " + fmt.Sprintf("%d", tries-1) + " failed attempts)")
