@@ -4,7 +4,6 @@ package ircclient
 
 import (
 	"log"
-	"time"
 )
 
 type basicProtocol struct {
