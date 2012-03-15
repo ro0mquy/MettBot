@@ -77,7 +77,7 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 				return
 			}
 			response, err := client.Get(url)
-			if response.StatusCode != 200 || err != nil {
+			if err != nil || response.StatusCode != 200 {
 				log.Println("ERROR: (HalloWelt): Unable to get current event list from DomJudge")
 				time.Sleep(120 * 1e9)
 				continue
