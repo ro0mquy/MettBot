@@ -4,11 +4,11 @@ package ircclient
 // and the locks on it.
 
 import (
-	"sync"
 	"github.com/kless/goconfig/config"
 	"log"
-	"utf8"
 	"os"
+	"sync"
+	"unicode/utf8"
 )
 
 type ConfigPlugin struct {
@@ -37,7 +37,7 @@ func NewConfigPlugin(filename string) *ConfigPlugin {
 	for _, x := range []string{"host", "nick", "ident", "realname"} {
 		_, err := c.String("Server", x)
 		if err != nil {
-			log.Fatal("Error while parsing config: " + err.String())
+			log.Fatal("Error while parsing config: " + err.Error())
 		}
 	}
 	trigger, err := c.String("Server", "trigger")

@@ -1,9 +1,9 @@
 package ircclient
 
 import (
-	"strconv"
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 type authPlugin struct {
@@ -19,7 +19,7 @@ func (a *authPlugin) Register(cl *IRCClient) {
 	options := a.ic.GetOptions("Auth")
 	for _, mask := range options {
 		if _, err := regexp.Compile(mask); err != nil {
-			panic(err.String())
+			panic(err)
 		}
 	}
 	a.ic.RegisterCommandHandler("mya", 0, 0, a)
@@ -68,14 +68,14 @@ func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 		level := a.GetAccessLevel(cmd.Source)
 		newlevel, err := strconv.Atoi(cmd.Args[1])
 		if err != nil {
-			a.ic.Reply(cmd, "Error: "+err.String())
+			a.ic.Reply(cmd, "Error: "+err.Error())
 		}
 		if level < newlevel || level < 400 {
 			a.ic.Reply(cmd, "You are not authorized to do this")
 			return
 		}
 		if _, err := regexp.Compile(cmd.Args[0]); err != nil {
-			a.ic.Reply(cmd, "Error: Unable to compile regexp: "+err.String())
+			a.ic.Reply(cmd, "Error: Unable to compile regexp: "+err.Error())
 			return
 		}
 		//a.ic.SetIntOption("Auth", cmd.Args[0], newlevel)

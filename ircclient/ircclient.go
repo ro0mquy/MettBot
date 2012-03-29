@@ -4,9 +4,10 @@
 package ircclient
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strings"
-	"fmt"
 )
 
 type IRCClient struct {
@@ -37,9 +38,9 @@ func NewIRCClient(configfile string) *IRCClient {
 // Registers a new plugin. Plugins can be registered at any time, even before
 // the actual connection attempt. The plugin's Unregister() function will already
 // be called when the connection is lost.
-func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
+func (ic *IRCClient) RegisterPlugin(p Plugin) error {
 	if _, ok := ic.plugins[p.String()]; ok == true {
-		return os.NewError("Plugin already exists")
+		return errors.New("Plugin already exists")
 	}
 	p.Register(ic)
 	ic.plugins[p.String()] = p
@@ -51,9 +52,9 @@ func (ic *IRCClient) RegisterPlugin(p Plugin) os.Error {
 // be registered. This function is not synchronized, e.g., it shall only
 // be called during registration (as Plugin.Register()-calls are currently
 // sequential).
-func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minaccess int, plugin Plugin) os.Error {
+func (ic *IRCClient) RegisterCommandHandler(command string, minparams int, minaccess int, plugin Plugin) error {
 	if plug, err := ic.handlers[command]; err {
-		return os.NewError("Handler is already registered by plugin: " + plug.Handler.String())
+		return errors.New("Handler is already registered by plugin: " + plug.Handler.String())
 	}
 	ic.handlers[command] = handler{plugin, command, minparams, minaccess}
 	return nil
@@ -84,7 +85,7 @@ func (ic *IRCClient) SetStringOption(section, option, value string) {
 	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
-	if ! cf.Conf.HasSection(section) {
+	if !cf.Conf.HasSection(section) {
 		cf.Conf.AddSection(section)
 	}
 	if cf.Conf.HasOption(section, option) {
@@ -102,7 +103,7 @@ func (ic *IRCClient) RemoveOption(section, option string) {
 	cf.Lock()
 	defer cf.Unlock()
 
-	if ! cf.Conf.HasSection(section) {
+	if !cf.Conf.HasSection(section) {
 		// nothing to do
 		return
 	}
@@ -128,7 +129,7 @@ func (ic *IRCClient) GetOptions(section string) []string {
 
 // Does the same as GetStringOption(), but with integers. Returns an os.Error,
 // if the given config option does not exist.
-func (ic *IRCClient) GetIntOption(section, option string) (int, os.Error) {
+func (ic *IRCClient) GetIntOption(section, option string) (int, error) {
 	c := ic.plugins["conf"]
 	cf, _ := c.(*ConfigPlugin)
 	cf.Lock()
@@ -147,12 +148,11 @@ func (ic *IRCClient) SetIntOption(section, option string, value int) {
 	cf.Lock()
 	defer cf.Unlock()
 	stropt := fmt.Sprintf("%d", value)
-	if ! cf.Conf.HasSection(section) {
+	if !cf.Conf.HasSection(section) {
 		cf.Conf.AddSection(section)
 	}
 	cf.Conf.AddOption(section, option, stropt)
 }
-
 
 // Gets the highest matching access level for a given hostmask by comparing
 // the mask against all authorization entries. Default return value is 0
@@ -169,7 +169,7 @@ func (ic *IRCClient) GetAccessLevel(host string) int {
 func (ic *IRCClient) SetAccessLevel(host string, level int) {
 	a := ic.plugins["auth"]
 	auth, _ := a.(*authPlugin)
-	auth.SetAccessLevel(host, level )
+	auth.SetAccessLevel(host, level)
 }
 
 // Delete the given regular expression from auth database. The "host" parameter
@@ -185,7 +185,7 @@ func (ic *IRCClient) DelAccessLevel(host string) {
 // already in use, it will automatically be suffixed with an single underscore until
 // an unused nickname is found. This function blocks until the connection attempt
 // has been finished.
-func (ic *IRCClient) Connect() os.Error {
+func (ic *IRCClient) Connect() error {
 	ic.conn = NewircConn()
 	e := ic.conn.Connect(ic.GetStringOption("Server", "host"))
 	if e != nil {
@@ -265,7 +265,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 			return
 		}
 		if len(c.Args) < handler.Minparams {
-			ic.Reply(c, "This command requires at least " + fmt.Sprintf("%d", handler.Minparams)+" parameters")
+			ic.Reply(c, "This command requires at least "+fmt.Sprintf("%d", handler.Minparams)+" parameters")
 			return
 		}
 		go handler.Handler.ProcessCommand(c)
@@ -275,7 +275,7 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 // Starts the actual command processing. This function will block until the connection
 // has either been lost or Disconnect() has been called (by a plugin or by the library
 // user).
-func (ic *IRCClient) InputLoop() os.Error {
+func (ic *IRCClient) InputLoop() error {
 	for {
 		in, ok := <-ic.conn.Input
 		if !ok {
@@ -325,7 +325,6 @@ func (ic *IRCClient) GetPlugin(name string) Plugin {
 	return ic.plugins[name]
 }
 
-
 // Get the Usage string from the Plugin that has registered itself as handler for
 // the Command cmd. we need to wrap this to ircclient because the handlers are not
 // public, and GetPlugin doesn't help us either, because the plugin<->command mapping
@@ -351,7 +350,6 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 	}
 	ic.SendLine("PRIVMSG " + target + " :" + message)
 }
-
 
 // Returns socket fd. Needed for kexec
 func (ic *IRCClient) GetSocket() int {

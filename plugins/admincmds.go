@@ -1,8 +1,8 @@
 package plugins
 
 import (
+	"../ircclient"
 	"strings"
-	"ircclient"
 )
 
 type AdminPlugin struct {

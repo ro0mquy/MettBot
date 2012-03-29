@@ -1,22 +1,24 @@
 package plugins
 
+/*
+
 import (
-	"ircclient"
+	"encoding/json"
 	"fmt"
-	"log"
 	"io/ioutil"
+	"../ircclient"
+	"log"
+	"math/rand"
+	"net/http"
 	"os"
 	"strings"
-	"http"
-	"json"
-	"rand"
-	"time"
 	"sync"
+	"time"
 )
 
 type comic struct {
-	Num   int
-	Title string
+	Num        int
+	Title      string
 	Transcript string
 }
 
@@ -34,7 +36,7 @@ func getCurrentComic(xkcdClient *http.Client) int {
 	return c.Num
 }
 
-func (c *comic) readJSON(number int, xkcdClient *http.Client) (err os.Error) {
+func (c *comic) readJSON(number int, xkcdClient *http.Client) (err error) {
 	raw, err := ioutil.ReadFile(fmt.Sprintf("comics/%v.json", number))
 	if err != nil {
 		if downloadJSON(number, xkcdClient) {
@@ -81,7 +83,7 @@ const prob404 float32 = 0.5
 // If no comic is found, it returns -1 or 404.
 
 func (x *XKCDPlugin) matchingComicTitle(args []string) int {
-	currentTime := time.LocalTime()
+	currentTime := time.Now()
 	if currentTime.Day != x.lastUpdate.Day || currentTime.Month != x.lastUpdate.Month || currentTime.Year != x.lastUpdate.Year {
 		x.updateComics()
 		x.lastUpdate = currentTime
@@ -109,7 +111,7 @@ func (x *XKCDPlugin) matchingComicTitle(args []string) int {
 }
 
 func (x *XKCDPlugin) matchingComicAll(args []string) int {
-	currentTime := time.LocalTime()
+	currentTime := time.Now()
 	if currentTime.Day != x.lastUpdate.Day || currentTime.Month != x.lastUpdate.Month || currentTime.Year != x.lastUpdate.Year {
 		x.updateComics()
 		x.lastUpdate = currentTime
@@ -140,7 +142,7 @@ type XKCDPlugin struct {
 	ic         *ircclient.IRCClient
 	maxComic   int
 	comics     []comic
-	lastUpdate *time.Time
+	lastUpdate time.Time
 	// Needed, because fetch is done in parallel
 	mutex sync.Mutex
 }
@@ -148,7 +150,7 @@ type XKCDPlugin struct {
 func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
 	x.ic = cl
 
-	var err os.Error
+	var err error
 	var client http.Client
 
 	x.mutex.Lock()
@@ -171,7 +173,7 @@ func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
 				x.comics = append(x.comics, c)
 			}
 		}
-		x.lastUpdate = time.LocalTime()
+		x.lastUpdate = time.Now()
 		x.mutex.Unlock()
 	}()
 	x.ic.RegisterCommandHandler("x", 0, 0, x)
@@ -180,7 +182,7 @@ func (x *XKCDPlugin) Register(cl *ircclient.IRCClient) {
 
 func (x *XKCDPlugin) updateComics() {
 	newMax := getCurrentComic(&http.Client{})
-	var err os.Error
+	var err error
 	if newMax == 0 {
 		if newMax, err = x.ic.GetIntOption("XKCD", "maxComic"); err != nil {
 			newMax = 0
@@ -242,3 +244,5 @@ func (x *XKCDPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 
 func (x *XKCDPlugin) Unregister() {
 }
+
+*/

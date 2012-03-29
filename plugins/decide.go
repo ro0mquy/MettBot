@@ -1,19 +1,19 @@
 package plugins
 
 import (
-	"strings"
-	"ircclient"
-	"rand"
+	"../ircclient"
 	"log"
+	"math/rand"
+	"strings"
 	"time"
 )
 
 type DecidePlugin struct {
-	ic *ircclient.IRCClient
-	requests chan *ircclient.IRCMessage
+	ic        *ircclient.IRCClient
+	requests  chan *ircclient.IRCMessage
 	boolchans chan chan bool
-	current *ircclient.IRCMessage
-	done bool
+	current   *ircclient.IRCMessage
+	done      bool
 }
 
 func (d *DecidePlugin) Register(cl *ircclient.IRCClient) {
@@ -35,7 +35,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if len(msg.Args) == 0 {
 		return
 	}
-	if strings.Index(msg.Args[len(msg.Args) - 1], "!decide") == 0 {
+	if strings.Index(msg.Args[len(msg.Args)-1], "!decide") == 0 {
 		d.requests <- msg
 		go func() {
 			newChan := make(chan bool)
@@ -48,15 +48,15 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 				cmd := ircclient.ParseCommand(msg)
 				if len(cmd.Args) <= 1 {
 					if rand.Intn(2) == 0 {
-						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0] + ": Yes")
+						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": Yes")
 					} else {
-						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0] + ": No")
+						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": No")
 					}
 				} else {
-					d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0] + ": " + cmd.Args[rand.Intn(len(cmd.Args))])
+					d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": "+cmd.Args[rand.Intn(len(cmd.Args))])
 				}
 			}
-		} ()
+		}()
 		return
 	}
 	cmd := ircclient.ParseCommand(msg)
@@ -82,9 +82,9 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 				if len(current.Args) <= 1 {
 					switch reply[1] {
 					case "Yes":
-						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": No")
+						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0]+": No")
 					case "No":
-						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": Yes")
+						d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0]+": Yes")
 					default:
 					}
 				} else {
@@ -98,7 +98,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 					if r >= i {
 						r++
 					}
-					d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0] + ": " + current.Args[r])
+					d.ic.Reply(cmd, strings.Split(d.current.Source, "!")[0]+": "+current.Args[r])
 				}
 				d.done = true
 			}

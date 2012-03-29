@@ -1,14 +1,15 @@
 package plugins
 
+/*
+
 import (
-	"os"
-	"ircclient"
-	"time"
 	"container/list"
-	"json"
-	"sync"
+	"encoding/json"
 	"fmt"
+	"../ircclient"
 	"log"
+	"sync"
+	"time"
 )
 
 const notifyBefore = 600 // TODO: config
@@ -36,12 +37,12 @@ type configEntry struct {
 }
 
 // Gets the _next_ time "date" matches, in seconds.
-func nextAt(date string) (int64, os.Error) {
+func nextAt(date string) (int64, error) {
 	timertime, err := time.Parse("Mon 15:04", date)
 	if err != nil {
 		return 0, err
 	}
-	curtime := time.LocalTime()
+	curtime := time.Now()
 
 	// XXX - This is still quite ugly. Any ideas
 	// on how to improve it?
@@ -50,10 +51,10 @@ func nextAt(date string) (int64, os.Error) {
 	*timertime = *curtime
 	timertime.Hour, timertime.Minute, timertime.Second = save1, save2, save3
 
-	for timertime.Weekday != weekday || timertime.Seconds()-curtime.Seconds() <= notifyBefore {
-		timertime = time.SecondsToLocalTime(timertime.Seconds() + (24 * 60 * 60))
+	for timertime.Weekday != weekday || timertime.Unix()-curtime.Unix() <= notifyBefore {
+		timertime = time.Unix(timertime.Unix()+(24*60*60), 0)
 	}
-	return timertime.Seconds(), nil
+	return timertime.Unix(), nil
 }
 
 // Fills the list of notifications with all lectures and
@@ -74,12 +75,12 @@ func (l *LecturePlugin) fillNotificationList() int64 {
 		if err := json.Unmarshal([]byte(value), &lecture); err != nil {
 			// panics should only happen during initialization, during runtime,
 			// all config entries are checked before insertion.
-			panic("LecturePlugin: Invalid JSON for key " + key + " : " + err.String())
+			panic("LecturePlugin: Invalid JSON for key " + key + " : " + err.Error())
 		}
 
 		time, err := nextAt(lecture.Time)
 		if err != nil {
-			log.Printf("Unable to parse time value for lecture %s: %s\n", lecture.Name, err.String())
+			log.Printf("Unable to parse time value for lecture %s: %s\n", lecture.Name, err.Error())
 			continue
 		}
 		notifyTime := time - notifyBefore
@@ -103,7 +104,7 @@ func (l *LecturePlugin) sendNotifications() {
 		if nextNotification < 0 {
 			timerChan = make(chan int64)
 		} else {
-			timerChan = time.After((nextNotification - time.Seconds()) * 1e9)
+			timerChan = time.After((nextNotification.Sub(time.Now())) * 1e9)
 		}
 		select {
 		case <-l.done:
@@ -117,7 +118,7 @@ func (l *LecturePlugin) sendNotifications() {
 		for e := l.notifications.Front(); e != nil; e = e.Next() {
 			notify := e.Value.(notification)
 			entry := notify.entry
-			if notify.when <= time.Seconds() {
+			if notify.when <= time.Now() {
 				l.ic.SendLine("PRIVMSG " + entry.Channel + " :inb4 (" + entry.Time + "): \"" + entry.LongName + "\" (" + entry.Name + ") bei " + entry.Academic + ", Ort: " + entry.Venue)
 			}
 		}
@@ -168,11 +169,11 @@ func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 		lecture := configEntry{cmd.Args[0], cmd.Args[1], cmd.Args[2], cmd.Args[3], cmd.Args[4], cmd.Args[5]}
 		_, err := time.Parse("Mon 15:04", lecture.Time)
 		if err != nil {
-			l.ic.Reply(cmd, "Invalid date specified: "+err.String())
+			l.ic.Reply(cmd, "Invalid date specified: "+err.Error())
 			return
 		}
 		jlecture, _ := json.Marshal(lecture)
-		l.ic.SetStringOption("Lectures", fmt.Sprintf("%d", time.Seconds()), string(jlecture))
+		l.ic.SetStringOption("Lectures", fmt.Sprintf("%d", time.Now()), string(jlecture))
 		l.ic.Reply(cmd, "Lecture added.")
 		l.fillNotificationList()
 		l.update <- true
@@ -185,3 +186,5 @@ func (l *LecturePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 func (l *LecturePlugin) Unregister() {
 	l.done <- true
 }
+
+*/

@@ -1,12 +1,12 @@
 package plugins
 
 import (
-	"ircclient"
-	"os"
+	"../ircclient"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 	"time"
-	"log"
 )
 
 type LoggerPlugin struct {
@@ -18,12 +18,12 @@ func NewLoggerPlugin(_dir string) *LoggerPlugin {
 	return &LoggerPlugin{dir: _dir}
 }
 
-func make_sure_dir_exists(dirname string) os.Error {
+func make_sure_dir_exists(dirname string) error {
 	finfo, err := os.Lstat(dirname)
 	if err != nil {
 		return os.Mkdir(dirname, 0755) // hope the modes are ok like this
 	}
-	if finfo.IsDirectory() {
+	if finfo.IsDir() {
 		return nil
 	}
 	// will fail, as file already exists, but this gives us clearer errors
@@ -56,7 +56,7 @@ func (l *LoggerPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	return
 }
 
-func write_string_to_file(filename, msg string) os.Error {
+func write_string_to_file(filename, msg string) error {
 	fp, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		return err
@@ -80,10 +80,10 @@ func (l *LoggerPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		}
 		host := strings.SplitN(l.ic.GetStringOption("Server", "host"), ":", 2)[0]
 		full_filename := l.dir + "/" + host + "_" + s
-		msg := fmt.Sprintf("%s | %s: %s\n", time.LocalTime().String(),
+		msg := fmt.Sprintf("%s | %s: %s\n", time.Now().String(),
 			strings.SplitN(msg.Source, "!", 2)[0], strings.Join(msg.Args, " "))
 		if err := write_string_to_file(full_filename, msg); err != nil {
-			log.Println(err.String())
+			log.Println(err.Error())
 		}
 	}
 }

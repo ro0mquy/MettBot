@@ -7,24 +7,24 @@ import (
 )
 
 type throttleIrcu struct {
-	lastsent  int64
-	tscounter int64
+	lastsent  time.Time
+	tscounter time.Time
 }
 
 func newthrottleIrcu() *throttleIrcu {
 	// Could be handy later
-	return &throttleIrcu{lastsent: time.Seconds(), tscounter: time.Seconds()}
+	return &throttleIrcu{lastsent: time.Now(), tscounter: time.Now()}
 }
 
 func (tm *throttleIrcu) WaitSend(line string) {
-	tm.lastsent = time.Seconds()
-	if tm.lastsent > tm.tscounter {
-		tm.tscounter = time.Seconds()
+	tm.lastsent = time.Now()
+	if tm.lastsent.Sub(tm.tscounter) > 0 {
+		tm.tscounter = time.Now()
 	}
-	tm.tscounter += int64((2 + len(line)/120))
-	t := tm.tscounter - time.Seconds()
-	if t > 10 {
-		time.Sleep((t - 10) * 1e9)
+	tm.tscounter = tm.tscounter.Add(time.Duration(2+len(line)/120) * time.Second)
+	t := tm.tscounter.Sub(time.Now())
+	if t-(10*time.Second) > 0 {
+		time.Sleep(t - (10 * time.Second))
 	}
 	return
 }

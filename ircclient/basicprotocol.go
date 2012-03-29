@@ -7,7 +7,7 @@ import (
 )
 
 type basicProtocol struct {
-	ic       *IRCClient
+	ic *IRCClient
 }
 
 func (bp *basicProtocol) Register(cl *IRCClient) {

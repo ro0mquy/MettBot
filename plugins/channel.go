@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"ircclient"
+	"../ircclient"
 )
 
 type ChannelsPlugin struct {

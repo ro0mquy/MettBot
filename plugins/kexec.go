@@ -1,20 +1,19 @@
 package plugins
 
 import (
-	"ircclient"
-	"syscall"
+	"../ircclient"
 	"fmt"
 	"log"
 	"os"
+	"syscall"
 )
-
 
 type KexecPlugin struct {
 	ic *ircclient.IRCClient
 }
 
 func (kp *KexecPlugin) Register(cl *ircclient.IRCClient) {
-	kp.ic= cl
+	kp.ic = cl
 	kp.ic.RegisterCommandHandler("kexec", 0, 500, kp)
 }
 
@@ -46,10 +45,9 @@ func (kp *KexecPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	log.Println("kexec: " + progname)
 	err := syscall.Exec(progname, []string{progname, fmt.Sprintf("%d", kp.ic.GetSocket())}, []string{})
 	// exec normally doesn't return
-	kp.ic.Reply(cmd, "couldn't kexec: " + syscall.Errstr(err))
+	kp.ic.Reply(cmd, "couldn't kexec: "+err.Error())
 }
 
 func (kp *KexecPlugin) Unregister() {
 	// nothing to see here, move on
 }
-

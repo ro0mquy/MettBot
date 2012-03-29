@@ -1,9 +1,9 @@
 package plugins
 
 import (
-	"strings"
-	"ircclient"
+	"../ircclient"
 	"fmt"
+	"strings"
 )
 
 type QDevoicePlugin struct {

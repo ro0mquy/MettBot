@@ -1,20 +1,21 @@
 package plugins
 
 import (
-	"strings"
-	"ircclient"
+	"../ircclient"
 	"bytes"
-	"net"
 	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha1"
+	"fmt"
 	"hash"
 	"log"
-	"fmt"
+	"net"
+	"strings"
 )
 
 type EvaluationPlugin struct {
-	ic *ircclient.IRCClient
-	c net.Conn
+	ic   *ircclient.IRCClient
+	c    net.Conn
 	hmac hash.Hash
 	done chan bool
 }
@@ -29,7 +30,7 @@ func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 		log.Println("WARNING: No HMAC key for evaluation plugin specified")
 		hmacKey = make([]byte, 20)
 		if n, err := rand.Read(hmacKey); n != 20 || err != nil {
-			log.Printf("ERROR: Unable to generate one. Exiting. (%s)", err.String())
+			log.Printf("ERROR: Unable to generate one. Exiting. (%s)", err.Error())
 			return
 		}
 		q.ic.SetStringOption("Eval", "key", fmt.Sprintf("%x", hmacKey))
@@ -68,13 +69,13 @@ func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 		log.Println("ERROR: Unable to open listener for evaluation plugin")
 		return
 	}
-	q.hmac = hmac.NewSHA1(hmacKey)
+	q.hmac = hmac.New(sha1.New, hmacKey)
 	go func() {
 		buf := make([]byte, 512)
 		for {
 			n, err := q.c.Read(buf)
 			select {
-			case <- q.done:
+			case <-q.done:
 				return
 			default:
 			}
@@ -82,14 +83,14 @@ func (q *EvaluationPlugin) Register(cl *ircclient.IRCClient) {
 				log.Println("ERROR: Unable to receive on evaluation notification")
 				return
 			}
-			if n < q.hmac.Size() + 1 {
+			if n < q.hmac.Size()+1 {
 				log.Println("WARNING: Invalid evaluation packet received")
 				continue
 			}
 			hash := buf[0:20]
 			q.hmac.Reset()
 			q.hmac.Write(buf[20:n])
-			if bytes.Compare(hash, q.hmac.Sum()) != 0 {
+			if bytes.Compare(hash, q.hmac.Sum(nil)) != 0 {
 				log.Println("WARNING: Wrong HMAC on evaluation packet")
 				continue
 			}

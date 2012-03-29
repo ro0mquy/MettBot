@@ -1,12 +1,13 @@
 package ircclient
 
 import (
+	"bufio"
+	"errors"
+	"log"
 	"net"
 	"os"
-	"log"
-	"bufio"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type ircConn struct {
@@ -16,31 +17,31 @@ type ircConn struct {
 	done    chan bool
 	flushed chan bool
 
-	Err    chan os.Error
+	Err    chan error
 	Output chan string
 	Input  chan string
 }
 
 func NewircConn() *ircConn {
-	return &ircConn{done: make(chan bool, 1), flushed: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(throttleIrcu), Err: make(chan os.Error, 5)}
+	return &ircConn{done: make(chan bool, 1), flushed: make(chan bool), Output: make(chan string, 50), Input: make(chan string, 50), tmgr: new(throttleIrcu), Err: make(chan error, 5)}
 }
 
-func (ic *ircConn) Connect(hostport string) os.Error {
+func (ic *ircConn) Connect(hostport string) error {
 	if len(os.Args) > 1 { // we're coming from kexec
 		fd, err := strconv.Atoi(os.Args[1])
 		if err != nil {
-			log.Fatal("unable to parse argv[1]" + err.String())
+			log.Fatal("unable to parse argv[1]" + err.Error())
 		}
-		file := os.NewFile(fd, "conn")
+		file := os.NewFile(uintptr(fd), "conn")
 		conn, err := net.FileConn(file)
 		if err != nil {
 			log.Println("Connection fd is: " + strconv.Itoa(fd))
-			log.Fatal("unable to recover conn: " + err.String())
+			log.Fatal("unable to recover conn: " + err.Error())
 		}
 		ic.conn, _ = conn.(*net.TCPConn)
 	} else {
 		if len(hostport) == 0 {
-			return os.NewError("empty server addr, not connecting")
+			return errors.New("empty server addr, not connecting")
 		}
 		if ic.conn != nil {
 			log.Printf("warning: already connected")
@@ -66,7 +67,7 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 					ic.done <- d
 					return
 				default:
-					ic.Err <- os.NewError("ircmessage: receive: " + err.String())
+					ic.Err <- errors.New("ircmessage: receive: " + err.Error())
 					ic.Quit()
 					return
 				}
@@ -86,8 +87,8 @@ func (ic *ircConn) Connect(hostport string) os.Error {
 				ic.tmgr.WaitSend(s)
 				log.Print(">> " + s)
 				if _, err := ic.bio.WriteString(s); err != nil {
-					ic.Err <- os.NewError("ircmessage: send: " + err.String())
-					log.Println("Send failed: " + err.String())
+					ic.Err <- errors.New("ircmessage: send: " + err.Error())
+					log.Println("Send failed: " + err.Error())
 					ic.Quit()
 					return
 				}
@@ -130,15 +131,15 @@ func (ic *ircConn) Quit() {
 
 	close(ic.Input)
 	ic.conn.Close()
-	ic.Err <- os.NewError("Connection closed by user")
+	ic.Err <- errors.New("Connection closed by user")
 }
 
 func (ic *ircConn) GetSocket() int {
 	file, ferr := ic.conn.File()
 	if ferr != nil {
-		log.Fatal("Unable to get socket fd: " + ferr.String())
+		log.Fatal("Unable to get socket fd: " + ferr.Error())
 		return -1
 	}
-	fd := file.Fd();
-	return fd
+	fd := file.Fd()
+	return int(fd)
 }

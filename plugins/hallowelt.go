@@ -2,12 +2,14 @@ package plugins
 
 // Important: Register this module _AFTER_ successful connection!
 
+/*
+
 import (
-	"log"
+	"encoding/xml"
 	"fmt"
-	"ircclient"
-	"http"
-	"xml"
+	"../ircclient"
+	"log"
+	"net/http"
 	"time"
 )
 
@@ -39,10 +41,10 @@ type Judging struct {
 }
 
 type HalloWeltPlugin struct {
-	ic   *ircclient.IRCClient
-	done chan bool
+	ic     *ircclient.IRCClient
+	done   chan bool
 	solved map[string](map[string]bool)
-	subid map[int]int
+	subid  map[int]int
 }
 
 func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
@@ -69,7 +71,7 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 	go func() {
 		last := -1
 		for {
-			t := time.After(polling * 1e9)
+			t := time.After(time.Duration(polling) * time.Second)
 			select {
 			case <-t:
 			case <-q.done:
@@ -171,3 +173,5 @@ func (q *HalloWeltPlugin) Unregister() {
 	q.done <- true
 	<-q.done
 }
+
+*/
