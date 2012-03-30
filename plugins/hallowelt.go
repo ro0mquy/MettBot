@@ -2,15 +2,14 @@ package plugins
 
 // Important: Register this module _AFTER_ successful connection!
 
-/*
-
 import (
+	"../ircclient"
 	"encoding/xml"
 	"fmt"
-	"../ircclient"
 	"log"
 	"net/http"
 	"time"
+	"io/ioutil"
 )
 
 type root struct {
@@ -86,7 +85,12 @@ func (q *HalloWeltPlugin) Register(cl *ircclient.IRCClient) {
 			}
 			var res root
 			// Parse XML
-			xml.Unmarshal(response.Body, &res)
+			body, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				log.Println("ERROR: (HalloWelt): Unable to read from HTTP response: " + err.Error())
+				continue
+			}
+			xml.Unmarshal(body, &res)
 			response.Body.Close()
 			if err != nil || last == len(res.Events.Event) {
 				continue
@@ -173,5 +177,3 @@ func (q *HalloWeltPlugin) Unregister() {
 	q.done <- true
 	<-q.done
 }
-
-*/
