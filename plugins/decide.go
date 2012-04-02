@@ -21,6 +21,8 @@ func (d *DecidePlugin) Register(cl *ircclient.IRCClient) {
 	d.ic = cl
 	d.requests = make(chan *ircclient.IRCMessage, 64)
 	d.boolchans = make(chan chan bool, 64)
+
+	cl.RegisterCommandHandler("decide", 1, 0, d)
 }
 
 func (d *DecidePlugin) String() string {
@@ -29,6 +31,18 @@ func (d *DecidePlugin) String() string {
 
 func (d *DecidePlugin) Info() string {
 	return "always gives a different answer than cl-faui2k9 does"
+}
+
+func (d *DecidePlugin) decide_and_reply(cmd *ircclient.IRCCommand) {
+	if len(cmd.Args) <= 1 {
+		if rand.Intn(2) == 0 {
+			d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": Yes")
+		} else {
+			d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": No")
+		}
+	} else {
+		d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": "+cmd.Args[rand.Intn(len(cmd.Args))])
+	}
 }
 
 func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
@@ -46,15 +60,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 			case _ = <-t.C:
 				_ = <-d.boolchans
 				cmd := ircclient.ParseCommand(msg)
-				if len(cmd.Args) <= 1 {
-					if rand.Intn(2) == 0 {
-						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": Yes")
-					} else {
-						d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": No")
-					}
-				} else {
-					d.ic.Reply(cmd, strings.Split(cmd.Source, "!")[0]+": "+cmd.Args[rand.Intn(len(cmd.Args))])
-				}
+				d.decide_and_reply(cmd)
 			}
 		}()
 		return
@@ -107,7 +113,7 @@ func (d *DecidePlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (d *DecidePlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	return
+	d.decide_and_reply(cmd)
 }
 
 func (d *DecidePlugin) Unregister() {
