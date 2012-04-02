@@ -1,6 +1,5 @@
 package plugins
 
-/*
 
 import (
 	"encoding/json"
@@ -82,12 +81,16 @@ const prob404 float32 = 0.5
 // matchingComic returns the number of a comic that contains all of the strings in args.
 // If no comic is found, it returns -1 or 404.
 
-func (x *XKCDPlugin) matchingComicTitle(args []string) int {
-	currentTime := time.Now()
-	if currentTime.Day != x.lastUpdate.Day || currentTime.Month != x.lastUpdate.Month || currentTime.Year != x.lastUpdate.Year {
+func (x *XKCDPlugin) update_if_necessary() {
+	if time.Since(x.lastUpdate).Hours() >= 24 {
 		x.updateComics()
-		x.lastUpdate = currentTime
+		x.lastUpdate = time.Now()
 	}
+}
+
+func (x *XKCDPlugin) matchingComicTitle(args []string) int {
+	x.update_if_necessary()
+
 	numbers := make([]int, 0, 10)
 	for _, c := range x.comics {
 		if len(args) == 1 && strings.ToLower(c.Title) == strings.ToLower(args[0]) {
@@ -111,11 +114,8 @@ func (x *XKCDPlugin) matchingComicTitle(args []string) int {
 }
 
 func (x *XKCDPlugin) matchingComicAll(args []string) int {
-	currentTime := time.Now()
-	if currentTime.Day != x.lastUpdate.Day || currentTime.Month != x.lastUpdate.Month || currentTime.Year != x.lastUpdate.Year {
-		x.updateComics()
-		x.lastUpdate = currentTime
-	}
+	x.update_if_necessary()
+
 	numbers := make([]int, 0, 10)
 	for _, c := range x.comics {
 		if len(args) == 1 && strings.ToLower(c.Title) == strings.ToLower(args[0]) {
@@ -245,4 +245,3 @@ func (x *XKCDPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 func (x *XKCDPlugin) Unregister() {
 }
 
-*/
