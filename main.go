@@ -86,7 +86,7 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		case cmd == "!quote":
 			bot.cQuote(actChannel, args, line.Time)
 		case cmd == "!print":
-			bot.cPrint(actChannel, args)
+			bot.cPrint(actChannel, args, line)
 		default:
 			bot.Syntax(actChannel)
 		}
@@ -108,10 +108,14 @@ func (bot *Mettbot) cQuote(channel string, msg string, t time.Time) {
 	bot.Notice(channel, "Added Quote to Database")
 }
 
-func (bot *Mettbot) cPrint(channel string, msg string) {
+func (bot *Mettbot) cPrint(channel string, msg string, line *irc.Line) {
 	num, err := strconv.Atoi(msg)
 	if err != nil {
 		bot.Syntax(channel)
+		return
+	}
+	if num < 0 {
+		bot.Action(channel, "slaps " + line.Nick)
 		return
 	}
 
