@@ -31,15 +31,17 @@ type Mettbot struct {
 	Prnt       chan string
 	Input      chan string
 	ReallyQuit bool
+	Topics     map[string]string
 }
 
 func NewMettbot(nick string, args ...string) *Mettbot {
 	bot := &Mettbot{
-		irc.SimpleClient(nick, args...),
-		make(chan bool),
-		make(chan string),
-		make(chan string, 4),
-		false,
+		irc.SimpleClient(nick, args...), // *irc.Conn
+		make(chan bool),                 // Quitted
+		make(chan string),               // Prnt
+		make(chan string, 4),            // Input
+		false,                           // ReallyQuit
+		make(map[string]string), // Topics
 	}
 	bot.EnableStateTracking()
 	return bot
@@ -47,6 +49,21 @@ func NewMettbot(nick string, args ...string) *Mettbot {
 
 func (bot *Mettbot) hConnected()    { bot.Join(*channel) }
 func (bot *Mettbot) hDisconnected() { bot.Quitted <- true }
+
+func (bot *Mettbot) hJoin(line *irc.Line) {
+	time.Sleep(1000 * time.Millisecond)
+	actChannel := line.Args[0]
+	bot.Topics[actChannel] = bot.ST.GetChannel(actChannel).Topic
+}
+
+func (bot *Mettbot) hTopic(line *irc.Line) {
+	actChannel := line.Args[0]
+	newTopic := line.Args[1]
+	oldTopic := bot.Topics[actChannel]
+	bot.Topics[actChannel] = newTopic
+	bot.Notice(actChannel, "Old topic: " + oldTopic)
+	//bot.Notice(actChannel, "New topic: "+newTopic)
+}
 
 func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 	actChannel := line.Args[0]
@@ -202,7 +219,9 @@ func main() {
 	// Set up handlers
 	mett.AddHandler("connected", func(conn *irc.Conn, line *irc.Line) { mett.hConnected() })
 	mett.AddHandler("disconnected", func(conn *irc.Conn, line *irc.Line) { mett.hDisconnected() })
+	mett.AddHandler("join", func(conn *irc.Conn, line *irc.Line) { mett.hJoin(line) })
 	mett.AddHandler("privmsg", func(conn *irc.Conn, line *irc.Line) { mett.hPrivmsg(line) })
+	mett.AddHandler("topic", func(conn *irc.Conn, line *irc.Line) { mett.hTopic(line) })
 
 	// set up a goroutine to read commands from stdin
 	go mett.readStdin()
