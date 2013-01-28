@@ -80,7 +80,7 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 
 		switch {
 		case cmd == "!help":
-			bot.Help(actChannel)
+			bot.Help(actChannel, args, line)
 		case args == "":
 			bot.Syntax(actChannel)
 		case cmd == "!quote":
@@ -97,8 +97,17 @@ func (bot *Mettbot) Syntax(channel string) {
 	bot.Notice(channel, "Wrong Syntax. Try !help")
 }
 
-func (bot *Mettbot) Help(channel string) {
-	bot.Notice(channel, "Mett")
+func (bot *Mettbot) Help(channel string, args string, line *irc.Line) {
+	//bot.Notice(channel, "Mett")
+	if args == "seriöslich" {
+		bot.Privmsg(line.Nick, "MettBot")
+		bot.Privmsg(line.Nick, "")
+		bot.Privmsg(line.Nick, "!quote <$nick> $quote -- add $quote to quote database")
+		bot.Privmsg(line.Nick, "!print $integer       -- print out quote number $integer")
+		bot.Privmsg(line.Nick, "!help seriöslich      -- show this help")
+	} else {
+		bot.Syntax(channel)
+	}
 }
 
 func (bot *Mettbot) cQuote(channel string, msg string, t time.Time) {
