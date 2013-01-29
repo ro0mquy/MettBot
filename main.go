@@ -1,13 +1,16 @@
 package main
 
 import (
+	"math/rand"
 	"bufio"
 	"flag"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
@@ -61,8 +64,9 @@ func (bot *Mettbot) hTopic(line *irc.Line) {
 	newTopic := line.Args[1]
 	oldTopic := bot.Topics[actChannel]
 	bot.Topics[actChannel] = newTopic
-	bot.Notice(actChannel, "Old topic: " + oldTopic)
+	//bot.Notice(actChannel, "Old topic: " + oldTopic)
 	//bot.Notice(actChannel, "New topic: "+newTopic)
+	bot.Notice(actChannel, bot.diffTopic(oldTopic, newTopic))
 }
 
 func (bot *Mettbot) hPrivmsg(line *irc.Line) {
@@ -80,13 +84,17 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 
 		switch {
 		case cmd == "!help":
-			bot.Help(actChannel, args, line)
+			bot.Help(actChannel, args, line.Nick)
+		case cmd == "!colors":
+			for i := 0; i < 16; i++ {
+				bot.Notice(*channel, fmt.Sprintf("\x03%v %v", i, i))
+			}
 		case args == "":
 			bot.Syntax(actChannel)
 		case cmd == "!quote":
 			bot.cQuote(actChannel, args, line.Time)
 		case cmd == "!print":
-			bot.cPrint(actChannel, args, line)
+			bot.cPrint(actChannel, args, line.Nick)
 		default:
 			bot.Syntax(actChannel)
 		}
@@ -97,14 +105,14 @@ func (bot *Mettbot) Syntax(channel string) {
 	bot.Notice(channel, "Wrong Syntax. Try !help")
 }
 
-func (bot *Mettbot) Help(channel string, args string, line *irc.Line) {
+func (bot *Mettbot) Help(channel, args, nick string) {
 	//bot.Notice(channel, "Mett")
 	if args == "seriöslich" {
-		bot.Privmsg(line.Nick, "MettBot")
-		bot.Privmsg(line.Nick, "")
-		bot.Privmsg(line.Nick, "!quote <$nick> $quote -- add $quote to quote database")
-		bot.Privmsg(line.Nick, "!print $integer       -- print out quote number $integer")
-		bot.Privmsg(line.Nick, "!help seriöslich      -- show this help")
+		bot.Privmsg(nick, "MettBot")
+		bot.Privmsg(nick, "")
+		bot.Privmsg(nick, "!quote <$nick> $quote -- add $quote to quote database")
+		bot.Privmsg(nick, "!print $integer       -- print out quote number $integer")
+		bot.Privmsg(nick, "!help seriöslich      -- show this help")
 	} else {
 		bot.Syntax(channel)
 	}
@@ -117,14 +125,14 @@ func (bot *Mettbot) cQuote(channel string, msg string, t time.Time) {
 	bot.Notice(channel, "Added Quote to Database")
 }
 
-func (bot *Mettbot) cPrint(channel string, msg string, line *irc.Line) {
+func (bot *Mettbot) cPrint(channel, msg, nick string) {
 	num, err := strconv.Atoi(msg)
 	if err != nil {
 		bot.Syntax(channel)
 		return
 	}
 	if num < 0 {
-		bot.Action(channel, "slaps " + line.Nick)
+		bot.Action(channel, "slaps "+nick)
 		return
 	}
 
@@ -223,6 +231,89 @@ func (bot *Mettbot) writeQuote() {
 		}
 		fo.Close()
 	}
+}
+
+func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
+	oldFile, err := ioutil.TempFile("", ".mettbotWdiffOld")
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+
+	n, err := oldFile.WriteString(oldTopic)
+	if n != len(oldTopic) || err != nil {
+		log.Println(err)
+		return ""
+	}
+	oldFile.Close()
+
+	newFile, err := ioutil.TempFile("", ".mettbotWdiffNew")
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+
+	n, err = newFile.WriteString(newTopic)
+	if n != len(newTopic) || err != nil {
+		log.Println(err)
+		return ""
+	}
+
+	newFile.Close()
+	defer func() {
+		os.Remove(oldFile.Name())
+		os.Remove(newFile.Name())
+	}()
+
+	db := "❣" // DeletionBegin
+	de := "❢" // DeletionEnd
+	ib := "¶" // InsertionBegin
+	ie := "⁋" // InsertionEnd
+
+	for {
+		rdb := rune(rand.Intn(255-32-3)+32)
+		rde := rdb + 1
+		rib := rde + 1
+		rie := rib + 1
+
+		contains := strings.ContainsRune(oldTopic, rdb)
+		contains = contains || strings.ContainsRune(oldTopic, rde)
+		contains = contains || strings.ContainsRune(oldTopic, rib)
+		contains = contains || strings.ContainsRune(oldTopic, rie)
+
+		contains = contains || strings.ContainsRune(newTopic, rdb)
+		contains = contains || strings.ContainsRune(newTopic, rde)
+		contains = contains || strings.ContainsRune(newTopic, rib)
+		contains = contains || strings.ContainsRune(newTopic, rie)
+
+		if contains == false {
+			db = fmt.Sprintf("%c", rdb)
+			de = fmt.Sprintf("%c", rde)
+			ib = fmt.Sprintf("%c", rib)
+			ie = fmt.Sprintf("%c", rie)
+			break
+		}
+	}
+
+	coloring := map[string]string{		// http://oreilly.com/pub/h/1953
+		db: "\x035\x1F\x02",
+		de: "\x0F\x0315",
+		ib: "\x033\x02",
+		ie: "\x0F\x0315",
+	}
+
+	cmd := exec.Command("wdiff", "-w"+db, "-x"+de, "-y"+ib, "-z"+ie, oldFile.Name(), newFile.Name())
+	out, _ := cmd.Output()
+	outStr := string(out)
+	fmt.Println(outStr)
+
+	for n, v := range coloring {
+		outStr = strings.Replace(outStr, n, v, -1)
+		fmt.Printf("Replace %#v with %#v\n", n, v)
+	}
+
+	fmt.Println(outStr)
+	return outStr
 }
 
 func main() {
