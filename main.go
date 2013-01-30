@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math/rand"
 	"bufio"
 	"flag"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
@@ -32,6 +32,7 @@ type Mettbot struct {
 	*irc.Conn
 	Quitted    chan bool
 	Prnt       chan string
+	LinesPrnt  chan int
 	Input      chan string
 	ReallyQuit bool
 	Topics     map[string]string
@@ -42,6 +43,7 @@ func NewMettbot(nick string, args ...string) *Mettbot {
 		irc.SimpleClient(nick, args...), // *irc.Conn
 		make(chan bool),                 // Quitted
 		make(chan string),               // Prnt
+		make(chan int),                  // LinesPrnt
 		make(chan string, 4),            // Input
 		false,                           // ReallyQuit
 		make(map[string]string), // Topics
@@ -122,7 +124,7 @@ func (bot *Mettbot) cQuote(channel string, msg string, t time.Time) {
 	s := fmt.Sprintln(t.Format(*timeformat), msg)
 	fmt.Print(s)
 	bot.Prnt <- s
-	bot.Notice(channel, "Added Quote to Database")
+	bot.Notice(channel, fmt.Sprint("Added Quote #", <-bot.LinesPrnt, " to Database"))
 }
 
 func (bot *Mettbot) cPrint(channel, msg, nick string) {
@@ -216,13 +218,25 @@ func (bot *Mettbot) parseStdin() {
 
 func (bot *Mettbot) writeQuote() {
 	for messages := range bot.Prnt {
-		fo, err := os.OpenFile(*quotes, syscall.O_WRONLY+syscall.O_CREAT+syscall.O_APPEND, 0644)
+		fo, err := os.OpenFile(*quotes, syscall.O_RDWR+syscall.O_CREAT, 0644)
 		if err != nil {
 			log.Println(err)
 			bot.Notice(*channel, "Couldn't open quote database")
 			continue
 		}
 		defer fo.Close()
+
+		foReader := bufio.NewReader(fo)
+		lines := 0 //last quote has no newline
+
+		for {
+			_, err = foReader.ReadString('\n')
+			if err != nil {
+				break
+			}
+			lines++
+		}
+		bot.LinesPrnt <- lines
 
 		_, err = fo.WriteString(messages)
 		if err != nil {
@@ -271,7 +285,7 @@ func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
 	ie := "⁋" // InsertionEnd
 
 	for {
-		rdb := rune(rand.Intn(255-32-3)+32)
+		rdb := rune(rand.Intn(255-32-3) + 32)
 		rde := rdb + 1
 		rib := rde + 1
 		rie := rib + 1
@@ -295,7 +309,7 @@ func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
 		}
 	}
 
-	coloring := map[string]string{		// http://oreilly.com/pub/h/1953
+	coloring := map[string]string{ // http://oreilly.com/pub/h/1953
 		db: "\x035\x1F\x02",
 		de: "\x0F\x0315",
 		ib: "\x033\x02",
@@ -305,14 +319,12 @@ func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
 	cmd := exec.Command("wdiff", "-w"+db, "-x"+de, "-y"+ib, "-z"+ie, oldFile.Name(), newFile.Name())
 	out, _ := cmd.Output()
 	outStr := string(out)
-	fmt.Println(outStr)
 
 	for n, v := range coloring {
 		outStr = strings.Replace(outStr, n, v, -1)
 		fmt.Printf("Replace %#v with %#v\n", n, v)
 	}
 
-	fmt.Println(outStr)
 	return outStr
 }
 
