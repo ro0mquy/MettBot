@@ -112,9 +112,9 @@ func (bot *Mettbot) Help(channel, args, nick string) {
 	if args == "seriöslich" {
 		bot.Privmsg(nick, "MettBot")
 		bot.Privmsg(nick, "")
-		bot.Privmsg(nick, "!quote <$nick> $quote -- add $quote to quote database")
-		bot.Privmsg(nick, "!print $integer       -- print out quote number $integer")
-		bot.Privmsg(nick, "!help seriöslich      -- show this help")
+		bot.Privmsg(nick, "!quote <$nick> $quote -- add a new quote to the database, timestamp is added automagically")
+		bot.Privmsg(nick, "!print $integer       -- print a quote from the database")
+		bot.Privmsg(nick, "!help seriöslich      -- show this help text")
 	} else {
 		bot.Syntax(channel)
 	}
