@@ -21,7 +21,7 @@ var host *string = flag.String("host", "irc.ps0ke.de:2342", "IRC server")
 var channel *string = flag.String("channel", "#metttest", "IRC channel")
 var nick *string = flag.String("nick", "rohmett", "IRC nick")
 var longnick *string = flag.String("longnick", "Le MettBot", "IRC fullname")
-var timeformat *string = flag.String("timeformat", "2006-01-02T15:04", "Time format string (standard date: 2006-01-02T15:04:05")
+var timeformat *string = flag.String("timeformat", "2006-01-02T15:04", "Time format string (standard date: 2006-01-02T15:04:05)")
 var quotes *string = flag.String("quotes", "mett_quotes.txt", "Quote database file")
 var metts *string = flag.String("metts", "mett_metts.txt", "Metts database file")
 var offtime *int = flag.Int("offtime", 4, "Number of hours of offtopic content befor posting mett content")
@@ -97,6 +97,7 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		if bot.MsgSinceMett > *offmessages {
 			bot.Mett()
 			bot.PostMett(*channel)
+			bot.MsgSinceMett = 0
 		}
 	}
 }
@@ -260,7 +261,10 @@ func (bot *Mettbot) readStdin() {
 func (bot *Mettbot) parseStdin() {
 	for cmd := range bot.Input {
 		if cmd[0] == ':' {
-			switch idx := strings.Index(cmd, " "); {
+			idx := strings.Index(cmd, " ")
+			msg := cmd[idx+1:]
+
+			switch {
 			case cmd[1] == 'd':
 				fmt.Printf(bot.String())
 			case cmd[1] == 'f':
@@ -278,17 +282,47 @@ func (bot *Mettbot) parseStdin() {
 				continue
 			case cmd[1] == 'q':
 				bot.ReallyQuit = true
-				bot.Quit(cmd[idx+1 : len(cmd)])
+				bot.Quit(msg)
 			case cmd[1] == 'j':
-				bot.Join(cmd[idx+1 : len(cmd)])
+				bot.Join(msg)
 			case cmd[1] == 'p':
-				bot.Part(cmd[idx+1 : len(cmd)])
+				bot.Part(msg)
 			case cmd[1] == 'm':
-				bot.Privmsg(*channel, cmd[idx+1:len(cmd)])
+				bot.Privmsg(*channel, msg)
 			case cmd[1] == 'a':
-				bot.Action(*channel, cmd[idx+1:len(cmd)])
+				bot.Action(*channel, msg)
 			case cmd[1] == 'n':
-				bot.Notice(*channel, cmd[idx+1:len(cmd)])
+				bot.Notice(*channel, msg)
+			case cmd[1] == 's':
+				midx := strings.Index(msg, " ")
+				if midx == -1 { continue }
+				val := msg[midx+1:]
+				switch msg[:midx] {
+				case "channel":
+					bot.Join(val)
+					*channel = val
+				case "nick":
+					bot.Nick(val)
+					*nick = val
+				case "quotes":
+					*quotes = val
+				case "metts":
+					*metts = val
+				case "offtime":
+					num, err := strconv.Atoi(val)
+					if err != nil {
+						fmt.Println("No Number")
+						continue
+					}
+					*offtime = num
+				case "offmessages":
+					num, err := strconv.Atoi(val)
+					if err != nil {
+						fmt.Println("No Number")
+						continue
+					}
+					*offmessages = num
+				}
 			}
 		} else {
 			bot.Raw(cmd)
