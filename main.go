@@ -23,30 +23,42 @@ var nick *string = flag.String("nick", "rohmett", "IRC nick")
 var longnick *string = flag.String("longnick", "Le MettBot", "IRC fullname")
 var timeformat *string = flag.String("timeformat", "2006-01-02T15:04", "Time format string (standard date: 2006-01-02T15:04:05")
 var quotes *string = flag.String("quotes", "mett_quotes.txt", "Quote database file")
+var metts *string = flag.String("metts", "mett_metts.txt", "Metts database file")
+var offtime *int = flag.Int("offtime", 4, "Number of hours of offtopic content befor posting mett content")
+var offmessages *int = flag.Int("offmessages", 50, "Number of messages of offtopic content befor posting mett content")
 
 func init() {
 	flag.Parse()
+	rand.Seed(time.Now().Unix())
 }
 
 type Mettbot struct {
 	*irc.Conn
-	Quitted    chan bool
-	Prnt       chan string
-	LinesPrnt  chan int
-	Input      chan string
-	ReallyQuit bool
-	Topics     map[string]string
+	Quitted         chan bool
+	QuotesPrnt      chan string
+	MettsPrnt       chan string
+	QuotesLinesPrnt chan int
+	MettsLinesPrnt  chan int
+	Input           chan string
+	IsMett          chan bool
+	ReallyQuit      bool
+	Topics          map[string]string
+	MsgSinceMett    int
 }
 
 func NewMettbot(nick string, args ...string) *Mettbot {
 	bot := &Mettbot{
 		irc.SimpleClient(nick, args...), // *irc.Conn
 		make(chan bool),                 // Quitted
-		make(chan string),               // Prnt
-		make(chan int),                  // LinesPrnt
+		make(chan string),               // QuotesPrnt
+		make(chan string),               // MettsPrnt
+		make(chan int),                  // QuotesLinesPrnt
+		make(chan int),                  // MettsLinesPrnt
 		make(chan string, 4),            // Input
+		make(chan bool),                 // IsMett
 		false,                           // ReallyQuit
 		make(map[string]string), // Topics
+		0,                       // MsgSinceMett
 	}
 	bot.EnableStateTracking()
 	return bot
@@ -75,32 +87,51 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 	actChannel := line.Args[0]
 	msg := line.Args[1]
 
-	if msg[0] == '!' {
-		cmd := msg
-		args := ""
-		idx := strings.Index(msg, " ")
-		if idx != -1 {
-			cmd = msg[:idx]
-			args = msg[idx+1:]
-		}
-
-		switch {
-		case cmd == "!help":
-			bot.Help(actChannel, args, line.Nick)
-		case cmd == "!colors":
-			for i := 0; i < 16; i++ {
-				bot.Notice(*channel, fmt.Sprintf("\x03%v %v", i, i))
-			}
-		case args == "":
-			bot.Syntax(actChannel)
-		case cmd == "!quote":
-			bot.cQuote(actChannel, args, line.Time)
-		case cmd == "!print":
-			bot.cPrint(actChannel, args, line.Nick)
-		default:
-			bot.Syntax(actChannel)
+	switch {
+	case msg[0] == '!':
+		bot.Command(actChannel, msg, line)
+	case strings.Contains(msg, "mett") || strings.Contains(msg, "Mett") || strings.Contains(msg, "METT"):
+		bot.Mett()
+	default:
+		bot.MsgSinceMett++
+		if bot.MsgSinceMett > *offmessages {
+			bot.Mett()
+			bot.PostMett(*channel)
 		}
 	}
+}
+
+func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
+	cmd := msg
+	args := ""
+	idx := strings.Index(msg, " ")
+	if idx != -1 {
+		cmd = msg[:idx]
+		args = msg[idx+1:]
+	}
+
+	switch {
+	case cmd == "!help":
+		bot.Help(actChannel, args, line.Nick)
+	case cmd == "!colors":
+		for i := 0; i < 16; i++ {
+			bot.Notice(*channel, fmt.Sprintf("\x03%v %v", i, i))
+		}
+	case args == "":
+		bot.Syntax(actChannel)
+	case cmd == "!quote":
+		bot.cQuote(actChannel, args, line.Time)
+	case cmd == "!mett":
+		bot.cMett(actChannel, args)
+	case cmd == "!print":
+		bot.cPrint(actChannel, args, line.Nick)
+	default:
+		bot.Syntax(actChannel)
+	}
+}
+
+func (bot *Mettbot) Mett() {
+	bot.IsMett <- true
 }
 
 func (bot *Mettbot) Syntax(channel string) {
@@ -108,12 +139,12 @@ func (bot *Mettbot) Syntax(channel string) {
 }
 
 func (bot *Mettbot) Help(channel, args, nick string) {
-	//bot.Notice(channel, "Mett")
 	if args == "seriöslich" {
 		bot.Privmsg(nick, "MettBot")
 		bot.Privmsg(nick, "")
 		bot.Privmsg(nick, "!quote <$nick> $quote -- add a new quote to the database, timestamp is added automagically")
 		bot.Privmsg(nick, "!print $integer       -- print a quote from the database")
+		bot.Privmsg(nick, "!mett $mettcontent    -- add new mettcontent to the mett database")
 		bot.Privmsg(nick, "!help seriöslich      -- show this help text")
 	} else {
 		bot.Syntax(channel)
@@ -122,9 +153,15 @@ func (bot *Mettbot) Help(channel, args, nick string) {
 
 func (bot *Mettbot) cQuote(channel string, msg string, t time.Time) {
 	s := fmt.Sprintln(t.Format(*timeformat), msg)
-	fmt.Print(s)
-	bot.Prnt <- s
-	bot.Notice(channel, fmt.Sprint("Added Quote #", <-bot.LinesPrnt, " to Database"))
+	log.Print("Quote: " + s)
+	bot.QuotesPrnt <- s
+	bot.Notice(channel, fmt.Sprint("Added Quote #", <-bot.QuotesLinesPrnt, " to Database"))
+}
+
+func (bot *Mettbot) cMett(channel string, s string) {
+	log.Print("Mett: " + s)
+	bot.MettsPrnt <- s + "\n"
+	bot.Notice(channel, fmt.Sprint("Added Mett #", <-bot.MettsLinesPrnt, " to Database"))
 }
 
 func (bot *Mettbot) cPrint(channel, msg, nick string) {
@@ -157,6 +194,47 @@ func (bot *Mettbot) cPrint(channel, msg, nick string) {
 		if err != nil {
 			log.Println(err)
 			bot.Notice(channel, "Failed to read from quote database")
+			return
+		}
+	}
+	bot.Notice(channel, quote)
+}
+
+func (bot *Mettbot) PostMett(channel string) {
+	fi, err := os.Open(*metts)
+	if err != nil {
+		log.Println(err)
+		bot.Notice(channel, "Failed to open mett database")
+		return
+	}
+	defer fi.Close()
+
+	reader := bufio.NewReader(fi)
+	lines := 0
+	for {
+		_, err = reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		lines++
+	}
+
+	num := rand.Intn(lines)
+	quote := ""
+
+	_, err = fi.Seek(0, 0)
+	if err != nil {
+		log.Println(err)
+	}
+	for ; num >= 0; num-- {
+		quote, err = reader.ReadString('\n')
+		if err == io.EOF {
+			log.Println("PostMett: reached EOF")
+			return
+		}
+		if err != nil {
+			log.Println(err)
+			bot.Notice(channel, "Failed to read from mett database")
 			return
 		}
 	}
@@ -209,6 +287,8 @@ func (bot *Mettbot) parseStdin() {
 				bot.Privmsg(*channel, cmd[idx+1:len(cmd)])
 			case cmd[1] == 'a':
 				bot.Action(*channel, cmd[idx+1:len(cmd)])
+			case cmd[1] == 'n':
+				bot.Notice(*channel, cmd[idx+1:len(cmd)])
 			}
 		} else {
 			bot.Raw(cmd)
@@ -216,9 +296,9 @@ func (bot *Mettbot) parseStdin() {
 	}
 }
 
-func (bot *Mettbot) writeQuote() {
-	for messages := range bot.Prnt {
-		fo, err := os.OpenFile(*quotes, syscall.O_RDWR+syscall.O_CREAT, 0644)
+func (bot *Mettbot) writeQuote(filename string, prnt <-chan string, linesPrnt chan<- int) {
+	for message := range prnt {
+		fo, err := os.OpenFile(filename, syscall.O_RDWR+syscall.O_CREAT, 0644)
 		if err != nil {
 			log.Println(err)
 			bot.Notice(*channel, "Couldn't open quote database")
@@ -236,9 +316,9 @@ func (bot *Mettbot) writeQuote() {
 			}
 			lines++
 		}
-		bot.LinesPrnt <- lines
+		linesPrnt <- lines
 
-		_, err = fo.WriteString(messages)
+		_, err = fo.WriteString(message)
 		if err != nil {
 			log.Println(err)
 			bot.Notice(*channel, "Couldn't write to quote database")
@@ -285,10 +365,10 @@ func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
 	ie := "⁋" // InsertionEnd
 
 	for {
-		rdb := rune(rand.Intn(255-32-3) + 32)
-		rde := rdb + 1
-		rib := rde + 1
-		rie := rib + 1
+		rdb := rune(rand.Intn(255-32) + 32)
+		rde := rune(rand.Intn(255-32) + 32)
+		rib := rune(rand.Intn(255-32) + 32)
+		rie := rune(rand.Intn(255-32) + 32)
 
 		contains := strings.ContainsRune(oldTopic, rdb)
 		contains = contains || strings.ContainsRune(oldTopic, rde)
@@ -322,10 +402,22 @@ func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
 
 	for n, v := range coloring {
 		outStr = strings.Replace(outStr, n, v, -1)
-		fmt.Printf("Replace %#v with %#v\n", n, v)
 	}
 
 	return outStr
+}
+
+func (bot *Mettbot) CheckMett() {
+	for {
+		select {
+		case <-bot.IsMett:
+		case <-time.After(time.Duration(*offtime) * time.Hour):
+			hour := time.Now().Hour()
+			if hour < 1 || hour >= 8 {
+				bot.PostMett(*channel)
+			}
+		}
+	}
 }
 
 func main() {
@@ -346,7 +438,11 @@ func main() {
 	go mett.parseStdin()
 
 	// Set up a go routine to write quotes to file
-	go mett.writeQuote()
+	go mett.writeQuote(*quotes, mett.QuotesPrnt, mett.QuotesLinesPrnt)
+	go mett.writeQuote(*metts, mett.MettsPrnt, mett.MettsLinesPrnt)
+
+	// Go routine to post regulary mett content
+	go mett.CheckMett()
 
 	for !mett.ReallyQuit {
 		// connect to server
