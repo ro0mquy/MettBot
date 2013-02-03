@@ -113,6 +113,13 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 	switch {
 	case cmd == "!help":
 		bot.Help(actChannel, args, line.Nick)
+	case cmd == "!mett":
+		bot.Mett()
+		if idx == -1 {
+			bot.PostMett(*channel)
+		} else {
+			bot.cMett(actChannel, args)
+		}
 	case cmd == "!colors":
 		for i := 0; i < 16; i++ {
 			bot.Notice(*channel, fmt.Sprintf("\x03%v %v", i, i))
@@ -121,9 +128,6 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 		bot.Syntax(actChannel)
 	case cmd == "!quote":
 		bot.cQuote(actChannel, args, line.Time)
-	case cmd == "!mett":
-		bot.Mett()
-		bot.cMett(actChannel, args)
 	case cmd == "!print":
 		bot.cPrint(actChannel, args, line.Nick)
 	default:
@@ -146,6 +150,7 @@ func (bot *Mettbot) Help(channel, args, nick string) {
 		bot.Privmsg(nick, "")
 		bot.Privmsg(nick, "!quote <$nick> $quote -- add a new quote to the database, timestamp is added automagically")
 		bot.Privmsg(nick, "!print $integer       -- print a quote from the database")
+		bot.Privmsg(nick, "!mett                 -- post a random entry from the mett database")
 		bot.Privmsg(nick, "!mett $mettcontent    -- add new mettcontent to the mett database")
 		bot.Privmsg(nick, "!help seriöslich      -- show this help text")
 	} else {
