@@ -27,6 +27,7 @@ var quotes *string = flag.String("quotes", "mett_quotes.txt", "Quote database fi
 var metts *string = flag.String("metts", "mett_metts.txt", "Metts database file")
 var offtime *int = flag.Int("offtime", 4, "Number of hours of offtopic content befor posting mett content")
 var offmessages *int = flag.Int("offmessages", 100, "Number of messages of offtopic content befor posting mett content")
+var probability *float64 = flag.Float64("probability", 0.1, "Probability that the bot ignores a command")
 
 func init() {
 	flag.Parse()
@@ -88,7 +89,11 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 
 	switch {
 	case msg[0] == '!':
-		bot.Command(actChannel, msg, line)
+		if rand.Intn(int(1 / *probability)) == 0 {
+			bot.Notice(actChannel, a.RandStr(a.IgnoreCmd))
+		} else {
+			bot.Command(actChannel, msg, line)
+		}
 	case strings.Contains(msg, "mett") || strings.Contains(msg, "Mett") || strings.Contains(msg, "METT"):
 		bot.Mett()
 	default:
@@ -330,6 +335,13 @@ func (bot *Mettbot) parseStdin() {
 						continue
 					}
 					*offmessages = num
+				case "probability":
+					num, err := strconv.ParseFloat(val, 64)
+					if err != nil {
+						fmt.Println("No Flaot")
+						continue
+					}
+					*probability = num
 				}
 			}
 		} else {

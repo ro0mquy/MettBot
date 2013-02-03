@@ -35,3 +35,9 @@ var QuoteNotFound []string = []string{
 var MettTime []string = []string{	// needs %v which is a string
 	"It's time for moar mett: %v",
 }
+
+var IgnoreCmd []string = []string{
+	"Bother someone else!",
+	"You're annoying me",
+	"No way",
+}
