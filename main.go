@@ -239,7 +239,7 @@ func (bot *Mettbot) PostMett(channel string) {
 			return
 		}
 	}
-	mettnotice = "It's time for moar Mett: " + mett
+	mettnotice := "It's time for moar Mett: " + mett
 	bot.Notice(channel, mettnotice)
 }
 
