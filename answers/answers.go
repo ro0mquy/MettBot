@@ -7,37 +7,55 @@ func RandStr(str []string) string {
 	return str[index]
 }
 
-var Warning []string = []string{
-	"I warn you",
-	"Back to Mett",
-}
-
 var Syntax []string = []string{
 	"Wrong Syntax. Try !help",
+	"Not at all. You may try !help",
+	"m( You should try the !help command",
+	"Ask some people around here how to talk with me",
+	"Hey, I'm a sensible MettBot. You can't talk to me that way",
 }
 
 var AddedQuote []string = []string{	// needs %v which is a number
 	"Added quote #%v to database",
+	"The %vth quote which will be never forgotten",
 }
 
 var AddedMett []string = []string{	// needs %v which is a number
 	"Added mett #%v to database",
+	"The %vth entry for those offtopic people",
+	"Now I've already %v entries of mettcontent",
 }
 
 var OffendNick []string = []string{	// (ACTION) needs %v which is a string
 	"slaps %v",
+	"warns %v",
+	"kicks %v in his mettom",
 }
 
 var QuoteNotFound []string = []string{
 	"Quote not found",
+	"There is no such quote",
+	"The Mettlers around here aren't that funny",
+}
+
+var Warning []string = []string{
+	"You guys are a bit offtopic",
+	"You looked at the name of this channel recently?",
+	"I warn you",
+	"Back to Mett",
 }
 
 var MettTime []string = []string{	// needs %v which is a string
 	"It's time for moar mett: %v",
+	"Hey guys, I think you will need this: %v",
+	"I warned you: %v",
+	"I think this channel needs some of this: %v",
 }
 
 var IgnoreCmd []string = []string{
 	"Bother someone else!",
 	"You're annoying me",
 	"No way",
+	"Ask me again later",
+	"No",
 }
