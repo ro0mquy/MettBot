@@ -1,4 +1,2 @@
-*
-!*.go
-!README.md
-!.gitignore
+*.txt
+mettbot_*_*

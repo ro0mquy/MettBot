@@ -1,6 +1,7 @@
 package main
 
 import (
+	a "./answers"
 	"bufio"
 	"flag"
 	"fmt"
@@ -78,8 +79,6 @@ func (bot *Mettbot) hTopic(line *irc.Line) {
 	newTopic := line.Args[1]
 	oldTopic := bot.Topics[actChannel]
 	bot.Topics[actChannel] = newTopic
-	//bot.Notice(actChannel, "Old topic: " + oldTopic)
-	//bot.Notice(actChannel, "New topic: "+newTopic)
 	bot.Notice(actChannel, bot.diffTopic(oldTopic, newTopic))
 }
 
@@ -97,6 +96,8 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		if bot.MsgSinceMett > *offmessages {
 			bot.Mett()
 			bot.PostMett(*channel)
+		} else if bot.MsgSinceMett > int(float32(*offmessages) * 0.9) {
+			bot.Notice(*channel, a.RandStr(a.Warning))
 		}
 	}
 }
@@ -141,7 +142,7 @@ func (bot *Mettbot) Mett() {
 }
 
 func (bot *Mettbot) Syntax(channel string) {
-	bot.Notice(channel, "Wrong Syntax. Try !help")
+	bot.Notice(channel, a.RandStr(a.Syntax))
 }
 
 func (bot *Mettbot) Help(channel, args, nick string) {
@@ -162,13 +163,13 @@ func (bot *Mettbot) cQuote(channel string, msg string, t time.Time) {
 	s := fmt.Sprintln(t.Format(*timeformat), msg)
 	log.Print("Quote: " + s)
 	bot.QuotesPrnt <- s
-	bot.Notice(channel, fmt.Sprint("Added Quote #", <-bot.QuotesLinesPrnt, " to Database"))
+	bot.Notice(channel, fmt.Sprintf(a.RandStr(a.AddedQuote), <-bot.QuotesLinesPrnt))
 }
 
 func (bot *Mettbot) cMett(channel string, s string) {
 	log.Print("Mett: " + s)
 	bot.MettsPrnt <- s + "\n"
-	bot.Notice(channel, fmt.Sprint("Added Mett #", <-bot.MettsLinesPrnt, " to Database"))
+	bot.Notice(channel, fmt.Sprintf(a.RandStr(a.AddedMett), <-bot.MettsLinesPrnt))
 }
 
 func (bot *Mettbot) cPrint(channel, msg, nick string) {
@@ -178,7 +179,7 @@ func (bot *Mettbot) cPrint(channel, msg, nick string) {
 		return
 	}
 	if num < 0 {
-		bot.Action(channel, "slaps "+nick)
+		bot.Action(channel, fmt.Sprintf(a.RandStr(a.OffendNick), nick))
 		return
 	}
 
@@ -195,7 +196,7 @@ func (bot *Mettbot) cPrint(channel, msg, nick string) {
 	for ; num >= 0; num-- {
 		quote, err = reader.ReadString('\n')
 		if err == io.EOF {
-			bot.Notice(channel, "Quote not found")
+			bot.Notice(channel, a.RandStr(a.QuoteNotFound))
 			return
 		}
 		if err != nil {
@@ -245,7 +246,7 @@ func (bot *Mettbot) PostMett(channel string) {
 			return
 		}
 	}
-	mettnotice := "It's time for moar Mett: " + mett
+	mettnotice := fmt.Sprintf(a.RandStr(a.MettTime), mett)
 	bot.Notice(channel, mettnotice)
 }
 
@@ -496,3 +497,5 @@ func main() {
 		<-mett.Quitted
 	}
 }
+
+
