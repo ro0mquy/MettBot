@@ -97,7 +97,6 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		if bot.MsgSinceMett > *offmessages {
 			bot.Mett()
 			bot.PostMett(*channel)
-			bot.MsgSinceMett = 0
 		}
 	}
 }
@@ -123,6 +122,7 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 	case cmd == "!quote":
 		bot.cQuote(actChannel, args, line.Time)
 	case cmd == "!mett":
+		bot.Mett()
 		bot.cMett(actChannel, args)
 	case cmd == "!print":
 		bot.cPrint(actChannel, args, line.Nick)
@@ -132,6 +132,7 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 }
 
 func (bot *Mettbot) Mett() {
+	bot.MsgSinceMett = 0
 	bot.IsMett <- true
 }
 
