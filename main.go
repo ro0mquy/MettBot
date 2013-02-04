@@ -31,6 +31,7 @@ var metts *string = flag.String("metts", "mett_metts.txt", "Metts database file"
 var offtime *int = flag.Int("offtime", 4, "Number of hours of offtopic content befor posting mett content")
 var offmessages *int = flag.Int("offmessages", 100, "Number of messages of offtopic content befor posting mett content")
 var probability *float64 = flag.Float64("probability", 0.1, "Probability that the bot ignores a command")
+var twitterregex *string = flag.String("twitterregex", "\\S*twitter\\.com\\/\\S+\\/status(es)?\\/(\\d+)\\S*", "The regex to match Twitter URLs")
 
 func init() {
 	flag.Parse()
@@ -92,7 +93,7 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		actChannel = line.Nick
 	}
 	msg := line.Args[1]
-	matchedTwitter, _ := regexp.MatchString("\\S*twitter\\.com\\/\\S+\\/status\\/(\\d{18})\\S*", msg)
+	matchedTwitter, _ := regexp.MatchString(*twitterregex, msg)
 
 	switch {
 	case msg[0] == '!':
@@ -486,13 +487,13 @@ func (bot *Mettbot) CheckMett() {
 }
 
 func (bot *Mettbot) GetTweet(channel, url string) {
-	regex, err := regexp.Compile("\\S*twitter\\.com\\/\\S+\\/status\\/(\\d{18})\\S*")
+	regex, err := regexp.Compile(*twitterregex)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	sub := regex.FindStringSubmatch(url)
-	tweetUrl := fmt.Sprintf("https://api.twitter.com/1/statuses/show.json?id=%v&trim_user=true&include_entities=no", sub[1])
+	tweetUrl := fmt.Sprintf("https://api.twitter.com/1/statuses/show.json?id=%v&trim_user=false&include_entities=no", sub[2])
 
 	resp, err := http.Get(tweetUrl)
 	if err != nil {
@@ -507,8 +508,12 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 		return
 	}
 
+	type usr struct {
+		Screen_name string
+	}
 	type tweet struct {
 		Text string
+		User usr
 	}
 
 	var twt tweet
@@ -518,7 +523,7 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 		return
 	}
 
-	bot.Notice(channel, twt.Text)
+	bot.Notice(channel, "@"+twt.User.Screen_name+": "+twt.Text)
 }
 
 func main() {
