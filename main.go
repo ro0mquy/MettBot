@@ -96,13 +96,13 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 	matchedTwitter, _ := regexp.MatchString(*twitterregex, msg)
 
 	switch {
-	case msg[0] == '!':
+	case strings.Index(msg, "!") == 0:
 		if rand.Intn(int(1 / *probability)) == 0 {
 			bot.Notice(actChannel, a.RandStr(a.IgnoreCmd))
 		} else {
 			bot.Command(actChannel, msg, line)
 		}
-	case msg[0:len(*nick)+1] == *nick+":":
+	case strings.Index(msg, *nick+":") == 0:
 		bot.Mett()
 		bot.Mentioned(actChannel)
 	case matchedTwitter:
@@ -326,6 +326,7 @@ func (bot *Mettbot) parseStdin() {
 			case cmd[1] == 's':
 				midx := strings.Index(msg, " ")
 				if midx == -1 {
+					fmt.Println("Wrong Syntax")
 					continue
 				}
 				val := msg[midx+1:]
@@ -361,6 +362,8 @@ func (bot *Mettbot) parseStdin() {
 						continue
 					}
 					*probability = num
+				default:
+					fmt.Println("Unknown variable")
 				}
 			}
 		} else {
