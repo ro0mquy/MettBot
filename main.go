@@ -85,6 +85,9 @@ func (bot *Mettbot) hTopic(line *irc.Line) {
 
 func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 	actChannel := line.Args[0]
+	if actChannel == *nick {
+		actChannel = line.Nick
+	}
 	msg := line.Args[1]
 
 	switch {
@@ -101,7 +104,7 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		if bot.MsgSinceMett >= *offmessages {
 			bot.Mett()
 			bot.PostMett(*channel)
-		} else if bot.MsgSinceMett == int(float32(*offmessages) * 0.95) {
+		} else if bot.MsgSinceMett == int(float32(*offmessages)*0.95) {
 			bot.Notice(*channel, a.RandStr(a.Warning))
 		}
 	}
@@ -308,7 +311,9 @@ func (bot *Mettbot) parseStdin() {
 				bot.Notice(*channel, msg)
 			case cmd[1] == 's':
 				midx := strings.Index(msg, " ")
-				if midx == -1 { continue }
+				if midx == -1 {
+					continue
+				}
 				val := msg[midx+1:]
 				switch msg[:midx] {
 				case "channel":
@@ -509,5 +514,3 @@ func main() {
 		<-mett.Quitted
 	}
 }
-
-
