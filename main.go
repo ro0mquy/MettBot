@@ -98,10 +98,10 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		bot.Mett()
 	default:
 		bot.MsgSinceMett++
-		if bot.MsgSinceMett > *offmessages {
+		if bot.MsgSinceMett >= *offmessages {
 			bot.Mett()
 			bot.PostMett(*channel)
-		} else if bot.MsgSinceMett > int(float32(*offmessages) * 0.9) {
+		} else if bot.MsgSinceMett == int(float32(*offmessages) * 0.95) {
 			bot.Notice(*channel, a.RandStr(a.Warning))
 		}
 	}
