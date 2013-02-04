@@ -18,6 +18,8 @@ var Syntax []string = []string{
 var AddedQuote []string = []string{	// needs %v which is a number
 	"Added quote #%v to database",
 	"The %vth quote which will be never forgotten",
+	"Another quote from the endless depths of #mett (#%v)",
+	"And we've got quote number %v",
 }
 
 var AddedMett []string = []string{	// needs %v which is a number
@@ -43,6 +45,7 @@ var Warning []string = []string{
 	"You looked at the name of this channel recently?",
 	"I warn you",
 	"Back to Mett",
+	"You should talk more about mett",
 }
 
 var MettTime []string = []string{	// needs %v which is a string
@@ -57,5 +60,14 @@ var IgnoreCmd []string = []string{
 	"You're annoying me",
 	"No way",
 	"Ask me again later",
-	"No",
+	"No.",
+	"Talk with my non-existing hand",
+}
+
+var Mention []string = []string{
+	"Yes.",
+	"No.",
+	"Ask _vincent",
+	"May the mett be with you",
+	"Hmm, what?",
 }

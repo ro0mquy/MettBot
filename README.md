@@ -23,6 +23,10 @@ Whenever the topic is changed, the bot diffs the new and the old one using [`wdi
 
 If there is no appearance of the word Mett for a certain time or number of messages, the bot posts a random entry from the mett database.
 
+### Showing Tweets
+
+The bot automagically detects and prints the content of tweets.
+
 ### Bugs and Improvements
 
 Feel free to crash the bot or make a pull request.

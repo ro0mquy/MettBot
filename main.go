@@ -102,6 +102,9 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		} else {
 			bot.Command(actChannel, msg, line)
 		}
+	case msg[0:len(*nick)+1] == *nick+":":
+		bot.Mett()
+		bot.Mentioned(actChannel)
 	case matchedTwitter:
 		bot.GetTweet(actChannel, msg)
 	case strings.Contains(msg, "mett") || strings.Contains(msg, "Mett") || strings.Contains(msg, "METT"):
@@ -149,6 +152,10 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 	default:
 		bot.Syntax(actChannel)
 	}
+}
+
+func (bot *Mettbot) Mentioned(channel string) {
+	bot.Notice(channel, a.RandStr(a.Mention))
 }
 
 func (bot *Mettbot) Mett() {
