@@ -3,6 +3,7 @@ package main
 import (
 	a "./answers"
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
@@ -10,8 +11,10 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -89,6 +92,7 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		actChannel = line.Nick
 	}
 	msg := line.Args[1]
+	matchedTwitter, _ := regexp.MatchString("\\S*twitter\\.com\\/\\S+\\/status\\/(\\d{18})\\S*", msg)
 
 	switch {
 	case msg[0] == '!':
@@ -97,6 +101,8 @@ func (bot *Mettbot) hPrivmsg(line *irc.Line) {
 		} else {
 			bot.Command(actChannel, msg, line)
 		}
+	case matchedTwitter:
+		bot.GetTweet(actChannel, msg)
 	case strings.Contains(msg, "mett") || strings.Contains(msg, "Mett") || strings.Contains(msg, "METT"):
 		bot.Mett()
 	default:
@@ -477,6 +483,42 @@ func (bot *Mettbot) CheckMett() {
 			}
 		}
 	}
+}
+
+func (bot *Mettbot) GetTweet(channel, url string) {
+	regex, err := regexp.Compile("\\S*twitter\\.com\\/\\S+\\/status\\/(\\d{18})\\S*")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	sub := regex.FindStringSubmatch(url)
+	tweetUrl := fmt.Sprintf("https://api.twitter.com/1/statuses/show.json?id=%v&trim_user=true&include_entities=no", sub[1])
+
+	resp, err := http.Get(tweetUrl)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	type tweet struct {
+		Text string
+	}
+
+	var twt tweet
+	err = json.Unmarshal(body, &twt)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	bot.Notice(channel, twt.Text)
 }
 
 func main() {
