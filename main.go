@@ -234,8 +234,6 @@ func (bot *Mettbot) cPrint(channel, msg, nick string) {
 }
 
 func (bot *Mettbot) cSearch(channel, msg string) {
-	fmt.Println( "seraching for", msg)
-
 	fi, err := os.Open(*quotes)
 	if err != nil {
 		log.Println(err)
@@ -245,7 +243,7 @@ func (bot *Mettbot) cSearch(channel, msg string) {
 	defer fi.Close()
 
 	reader := bufio.NewReader(fi)
-	for {
+	for n := 0; ; n++ {
 		quote, err := reader.ReadString('\n')
 		if err == io.EOF {
 			return
@@ -258,7 +256,7 @@ func (bot *Mettbot) cSearch(channel, msg string) {
 
 		ok, err := regexp.MatchString(msg, quote);
 		if ok && err == nil {
-			bot.Notice(channel, quote)
+			bot.Notice(channel,  strconv.Itoa(n) + " " + quote)
 		}
 	}
 }
