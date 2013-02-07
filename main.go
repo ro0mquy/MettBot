@@ -175,7 +175,7 @@ func (bot *Mettbot) Help(channel, args, nick string) {
 		bot.Privmsg(nick, "")
 		bot.Privmsg(nick, "!quote <$nick> $quote -- add a new quote to the database, timestamp is added automagically")
 		bot.Privmsg(nick, "!print $integer       -- print a quote from the database")
-		bot.Privmsg(nick, "!search $regex        -- searches the quote database for the regex")
+		bot.Privmsg(nick, "!search $string       -- searches the quote database (put '/' around your string for regex)")
 		bot.Privmsg(nick, "!mett                 -- post a random entry from the mett database")
 		bot.Privmsg(nick, "!mett $mettcontent    -- add new mettcontent to the mett database")
 		bot.Privmsg(nick, "!help seriöslich      -- show this help text")

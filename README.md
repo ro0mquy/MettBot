@@ -8,7 +8,7 @@ Commands
 
 * `!quote <$nick> $quote` -- add a new quote to the database, timestamp is added automagically
 * `!print $interger` -- print a quote from the database
-* `!search $regex` -- searches the quote database for the regex
+* `!search $string` -- searches the quote database (put '/' around your string for regex)
 * `!mett` -- post a random entry from the mett database
 * `!mett $mettcontent` -- add new mettcontent to the mett database
 * `!help seriöslich` -- show help text
