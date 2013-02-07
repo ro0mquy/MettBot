@@ -254,9 +254,15 @@ func (bot *Mettbot) cSearch(channel, msg string) {
 			return
 		}
 
-		ok, err := regexp.MatchString(msg, quote);
+		ok := false
+		if msg[0] == '/' && msg[len(msg)-1] == '/' {
+			ok, err = regexp.MatchString(msg[1:len(msg)-1], quote)
+		} else {
+			ok = strings.Contains(quote, msg)
+		}
+
 		if ok && err == nil {
-			bot.Notice(channel,  strconv.Itoa(n) + " " + quote)
+			bot.Notice(channel, strconv.Itoa(n)+" "+quote)
 		}
 	}
 }
