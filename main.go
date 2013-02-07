@@ -149,6 +149,8 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 		bot.cQuote(actChannel, args, line.Time)
 	case cmd == "!print":
 		bot.cPrint(actChannel, args, line.Nick)
+	case cmd == "!search":
+		bot.cSearch(actChannel, args)
 	default:
 		bot.Syntax(actChannel)
 	}
@@ -173,6 +175,7 @@ func (bot *Mettbot) Help(channel, args, nick string) {
 		bot.Privmsg(nick, "")
 		bot.Privmsg(nick, "!quote <$nick> $quote -- add a new quote to the database, timestamp is added automagically")
 		bot.Privmsg(nick, "!print $integer       -- print a quote from the database")
+		bot.Privmsg(nick, "!search $regex        -- searches the quote database for the regex")
 		bot.Privmsg(nick, "!mett                 -- post a random entry from the mett database")
 		bot.Privmsg(nick, "!mett $mettcontent    -- add new mettcontent to the mett database")
 		bot.Privmsg(nick, "!help seriöslich      -- show this help text")
@@ -228,6 +231,36 @@ func (bot *Mettbot) cPrint(channel, msg, nick string) {
 		}
 	}
 	bot.Notice(channel, quote)
+}
+
+func (bot *Mettbot) cSearch(channel, msg string) {
+	fmt.Println( "seraching for", msg)
+
+	fi, err := os.Open(*quotes)
+	if err != nil {
+		log.Println(err)
+		bot.Notice(channel, "Failed to open quote database")
+		return
+	}
+	defer fi.Close()
+
+	reader := bufio.NewReader(fi)
+	for {
+		quote, err := reader.ReadString('\n')
+		if err == io.EOF {
+			return
+		}
+		if err != nil {
+			log.Println(err)
+			bot.Notice(channel, "Failed to read from quote database")
+			return
+		}
+
+		ok, err := regexp.MatchString(msg, quote);
+		if ok && err == nil {
+			bot.Notice(channel, quote)
+		}
+	}
 }
 
 func (bot *Mettbot) PostMett(channel string) {
