@@ -4,6 +4,7 @@ import (
 	a "./answers"
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
 	"io"
@@ -18,7 +19,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"flag"
 )
 
 var Host *string = flag.String("host", "irc.ps0ke.de:2342", "IRC server")

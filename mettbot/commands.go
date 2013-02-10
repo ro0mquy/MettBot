@@ -50,7 +50,6 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 	}
 }
 
-
 func (bot *Mettbot) cHelp(channel, args, nick string) {
 	if args == "seriöslich" {
 		bot.Privmsg(nick, "MettBot")
@@ -148,4 +147,3 @@ func (bot *Mettbot) cSearch(channel, msg string) {
 		}
 	}
 }
-

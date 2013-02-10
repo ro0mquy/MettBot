@@ -1,9 +1,9 @@
 package main
 
 import (
+	"./mettbot"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
-	"./mettbot"
 )
 
 func main() {

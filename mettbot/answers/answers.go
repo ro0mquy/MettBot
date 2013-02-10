@@ -15,20 +15,20 @@ var Syntax []string = []string{
 	"Hey, I'm a sensible MettBot. You can't talk to me that way",
 }
 
-var AddedQuote []string = []string{	// needs %v which is a number
+var AddedQuote []string = []string{ // needs %v which is a number
 	"Added quote #%v to database",
 	"The %vth quote which will be never forgotten",
 	"Another quote from the endless depths of #mett (#%v)",
 	"And we've got quote number %v",
 }
 
-var AddedMett []string = []string{	// needs %v which is a number
+var AddedMett []string = []string{ // needs %v which is a number
 	"Added mett #%v to database",
 	"The %vth entry for those offtopic people",
 	"Now I've already %v entries of mettcontent",
 }
 
-var OffendNick []string = []string{	// (ACTION) needs %v which is a string
+var OffendNick []string = []string{ // (ACTION) needs %v which is a string
 	"slaps %v",
 	"warns %v",
 	"kicks %v in his mettom",
@@ -48,7 +48,7 @@ var Warning []string = []string{
 	"You should talk more about mett",
 }
 
-var MettTime []string = []string{	// needs %v which is a string
+var MettTime []string = []string{ // needs %v which is a string
 	"It's time for moar mett: %v",
 	"Hey guys, I think you will need this: %v",
 	"I warned you: %v",

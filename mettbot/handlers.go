@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-
-
 func (bot *Mettbot) HandlerConnected()    { bot.Join(*Channel) }
 func (bot *Mettbot) HandlerDisconnected() { bot.Quitted <- true }
 
