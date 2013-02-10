@@ -32,6 +32,7 @@ var Offtime *int = flag.Int("offtime", 4, "Number of hours of offtopic content b
 var Offmessages *int = flag.Int("offmessages", 100, "Number of messages of offtopic content befor posting mett content")
 var Probability *float64 = flag.Float64("probability", 0.1, "Probability that the bot ignores a command")
 var Twitterregex *string = flag.String("twitterregex", "\\S*twitter\\.com\\/\\S+\\/status(es)?\\/(\\d+)\\S*", "The regex to match Twitter URLs")
+var Firebird *float64 = flag.Float64("firebird", 0.05, "Probability firebird gets a question")
 
 func init() {
 	flag.Parse()
@@ -258,6 +259,11 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 	bot.Notice(channel, "@"+twt.User.Screen_name+": "+twt.Text)
 }
 
+func (bot *Mettbot) firebird(channel string) {
+	time.Sleep(time.Duration(rand.Intn(3)+3) * time.Second)
+	bot.Notice(channel, a.RandStr(a.Firebird))
+}
+
 func (bot *Mettbot) WriteQuote(filename string, prnt <-chan string, linesPrnt chan<- int) {
 	for message := range prnt {
 		fo, err := os.OpenFile(filename, syscall.O_RDWR+syscall.O_CREAT, 0644)
@@ -379,6 +385,13 @@ func (bot *Mettbot) ParseStdin() {
 						continue
 					}
 					*Probability = num
+				case "firebird":
+					num, err := strconv.ParseFloat(val, 64)
+					if err != nil {
+						fmt.Println("No Flaot")
+						continue
+					}
+					*Firebird = num
 				default:
 					fmt.Println("Unknown variable")
 				}

@@ -34,9 +34,15 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 	msg := line.Args[1]
 	matchedTwitter, _ := regexp.MatchString(*Twitterregex, msg)
 
+	if line.Nick == "firebird" {
+		if rand.Float64() < *Firebird {
+			go bot.firebird(actChannel)
+		}
+	}
+
 	switch {
 	case strings.Index(msg, "!") == 0:
-		if rand.Intn(int(1 / *Probability)) == 0 {
+		if rand.Float64() < *Probability {
 			bot.Notice(actChannel, a.RandStr(a.IgnoreCmd))
 		} else {
 			bot.Command(actChannel, msg, line)

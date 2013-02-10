@@ -71,3 +71,9 @@ var Mention []string = []string{
 	"May the mett be with you",
 	"Hmm, what?",
 }
+
+var Firebird []string = []string{
+	"Wer ist überhaupt dieser firebird?",
+	"Gibt es firebird überhaupt?",
+	"firebird: ist das ipv6 im HaWo schon gefixt?",
+}
