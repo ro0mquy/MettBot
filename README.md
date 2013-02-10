@@ -6,8 +6,8 @@ This is the bot serving #mett on the EosinNet IRC Network (`irc://irc.ps0ke.de:2
 Commands
 --------
 
-* `!quote <$nick> $quote` -- add a new quote to the database, timestamp is added automagically
-* `!print $interger` -- print a quote from the database
+* `!add <$nick> $quote` -- add a new quote to the database, timestamp is added automagically
+* `!quote $interger` -- print a quote from the database
 * `!search $string` -- searches the quote database (put '/' around your string for regex)
 * `!mett` -- post a random entry from the mett database
 * `!mett $mettcontent` -- add new mettcontent to the mett database

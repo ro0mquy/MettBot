@@ -39,10 +39,10 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 		}
 	case args == "":
 		bot.Syntax(actChannel)
+	case cmd == "!add":
+		bot.cAdd(actChannel, args, line.Time)
 	case cmd == "!quote":
-		bot.cQuote(actChannel, args, line.Time)
-	case cmd == "!print":
-		bot.cPrint(actChannel, args, line.Nick)
+		bot.cQuote(actChannel, args, line.Nick)
 	case cmd == "!search":
 		bot.cSearch(actChannel, args)
 	default:
@@ -54,8 +54,8 @@ func (bot *Mettbot) cHelp(channel, args, nick string) {
 	if args == "seriöslich" {
 		bot.Privmsg(nick, "MettBot")
 		bot.Privmsg(nick, "")
-		bot.Privmsg(nick, "!quote <$nick> $quote -- add a new quote to the database, timestamp is added automagically")
-		bot.Privmsg(nick, "!print $integer       -- print a quote from the database")
+		bot.Privmsg(nick, "!add <$nick> $quote   -- add a new quote to the database, timestamp is added automagically")
+		bot.Privmsg(nick, "!quote $integer       -- print a quote from the database")
 		bot.Privmsg(nick, "!search $string       -- searches the quote database (put '/' around your string for regex)")
 		bot.Privmsg(nick, "!mett                 -- post a random entry from the mett database")
 		bot.Privmsg(nick, "!mett $mettcontent    -- add new mettcontent to the mett database")
@@ -65,7 +65,7 @@ func (bot *Mettbot) cHelp(channel, args, nick string) {
 	}
 }
 
-func (bot *Mettbot) cQuote(channel string, msg string, t time.Time) {
+func (bot *Mettbot) cAdd(channel string, msg string, t time.Time) {
 	s := fmt.Sprintln(t.Format(*Timeformat), msg)
 	log.Print("Quote: " + s)
 	bot.QuotesPrnt <- s
@@ -78,7 +78,7 @@ func (bot *Mettbot) cMett(channel string, s string) {
 	bot.Notice(channel, fmt.Sprintf(a.RandStr(a.AddedMett), <-bot.MettsLinesPrnt))
 }
 
-func (bot *Mettbot) cPrint(channel, msg, nick string) {
+func (bot *Mettbot) cQuote(channel, msg, nick string) {
 	num, err := strconv.Atoi(msg)
 	if err != nil {
 		bot.Syntax(channel)
