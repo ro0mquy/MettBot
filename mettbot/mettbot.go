@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
+	"html"
 	"io"
 	"io/ioutil"
 	"log"
@@ -256,7 +257,8 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 		return
 	}
 
-	bot.Notice(channel, "@"+twt.User.Screen_name+": "+twt.Text)
+	tweetText := html.UnescapeString(twt.Text)
+	bot.Notice(channel, "@"+twt.User.Screen_name+": "+tweetText)
 }
 
 func (bot *Mettbot) firebird(channel string) {
