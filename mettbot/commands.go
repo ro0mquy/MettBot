@@ -29,7 +29,7 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 	case cmd == "!mett":
 		bot.Mett()
 		if idx == -1 {
-			bot.PostMett(*Channel)
+			bot.Notice(*Channel, bot.GetMett(*Channel))
 		} else {
 			bot.cMett(actChannel, args)
 		}

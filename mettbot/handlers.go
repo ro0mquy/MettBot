@@ -2,6 +2,7 @@ package mettbot
 
 import (
 	a "./answers"
+	"fmt"
 	irc "github.com/fluffle/goirc/client"
 	"math/rand"
 	"regexp"
@@ -58,7 +59,7 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 		bot.MsgSinceMett++
 		if bot.MsgSinceMett >= *Offmessages {
 			bot.Mett()
-			bot.PostMett(*Channel)
+			bot.Notice(*Channel, fmt.Sprintf(a.RandStr(a.MettTime), bot.GetMett(*Channel)))
 		} else if bot.MsgSinceMett == int(float32(*Offmessages)*0.95) {
 			bot.Notice(*Channel, a.RandStr(a.Warning))
 		}

@@ -92,18 +92,18 @@ func (bot *Mettbot) CheckMett() {
 		case <-time.After(time.Duration(*Offtime) * time.Hour):
 			hour := time.Now().Hour()
 			if hour < 1 || hour >= 8 {
-				bot.PostMett(*Channel)
+				bot.Notice(*Channel, fmt.Sprintf(a.RandStr(a.MettTime), bot.GetMett(*Channel)))
 			}
 		}
 	}
 }
 
-func (bot *Mettbot) PostMett(channel string) {
+func (bot *Mettbot) GetMett(channel string) string {
 	fi, err := os.Open(*Metts)
 	if err != nil {
 		log.Println(err)
 		bot.Notice(channel, "Failed to open mett database")
-		return
+		return "Error"
 	}
 	defer fi.Close()
 
@@ -128,16 +128,15 @@ func (bot *Mettbot) PostMett(channel string) {
 		mett, err = reader.ReadString('\n')
 		if err == io.EOF {
 			log.Println("PostMett: reached EOF")
-			return
+			return "Error"
 		}
 		if err != nil {
 			log.Println(err)
 			bot.Notice(channel, "Failed to read from mett database")
-			return
+			return "Error"
 		}
 	}
-	mettnotice := fmt.Sprintf(a.RandStr(a.MettTime), mett)
-	bot.Notice(channel, mettnotice)
+	return mett
 }
 
 func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
