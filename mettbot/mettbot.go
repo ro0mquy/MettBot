@@ -258,9 +258,9 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 
 	tweetText := html.UnescapeString(twt.Text)
 
-	tweetText = strings.Map( func(r rune) rune {
+	tweetText = strings.Map(func(r rune) rune {
 		if r < ' ' {
-			return -1
+			return ' '
 		}
 		return r
 	}, tweetText)
