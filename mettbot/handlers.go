@@ -34,7 +34,7 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 	}
 	msg := line.Args[1]
 
-	if strings.Index(msg, "!") == 0 {
+	if strings.HasPrefix(msg, "!") {
 		if rand.Float64() < *Probability {
 			bot.Notice(actChannel, a.RandStr(a.IgnoreCmd))
 		} else {
@@ -42,8 +42,7 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 		}
 	}
 
-	if strings.Index(msg, *Nick+":") == 0 {
-		bot.Mett()
+	if strings.HasPrefix(msg, *Nick+":") {
 		bot.Mentioned(actChannel)
 	}
 
