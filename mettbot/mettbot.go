@@ -273,6 +273,18 @@ func (bot *Mettbot) firebird(channel string) {
 	bot.Notice(channel, a.RandStr(a.Firebird))
 }
 
+func (bot *Mettbot) DongDong(channel, msg string) {
+	count := strings.Count(msg, "\\a")
+	str := a.RandStr(a.Dong)
+	notice := ""
+
+	for i := 0; i < count; i++ {
+		notice += str + " "
+	}
+
+	bot.Notice(channel, notice)
+}
+
 func (bot *Mettbot) WriteQuote(filename string, prnt <-chan string, linesPrnt chan<- int) {
 	for message := range prnt {
 		fo, err := os.OpenFile(filename, syscall.O_RDWR+syscall.O_CREAT, 0644)

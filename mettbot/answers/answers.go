@@ -77,3 +77,13 @@ var Firebird []string = []string{
 	"Gibt es firebird überhaupt?",
 	"firebird: ist das ipv6 im HaWo schon gefixt?",
 }
+
+var Dong []string = []string{
+	"DONG",
+	"DÖNG",
+	"DÄNG",
+	"DING",
+	"PLÖNK",
+	"BÄM",
+	"KLONK",
+}

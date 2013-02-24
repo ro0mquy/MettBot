@@ -33,7 +33,23 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 		actChannel = line.Nick
 	}
 	msg := line.Args[1]
-	matchedTwitter, _ := regexp.MatchString(*Twitterregex, msg)
+
+	if strings.Index(msg, "!") == 0 {
+		if rand.Float64() < *Probability {
+			bot.Notice(actChannel, a.RandStr(a.IgnoreCmd))
+		} else {
+			bot.Command(actChannel, msg, line)
+		}
+	}
+
+	if strings.Index(msg, *Nick+":") == 0 {
+		bot.Mett()
+		bot.Mentioned(actChannel)
+	}
+
+	if matchedTwitter, _ := regexp.MatchString(*Twitterregex, msg); matchedTwitter {
+		bot.GetTweet(actChannel, msg)
+	}
 
 	if line.Nick == "firebird" {
 		if rand.Float64() < *Firebird {
@@ -41,21 +57,13 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 		}
 	}
 
-	switch {
-	case strings.Index(msg, "!") == 0:
-		if rand.Float64() < *Probability {
-			bot.Notice(actChannel, a.RandStr(a.IgnoreCmd))
-		} else {
-			bot.Command(actChannel, msg, line)
-		}
-	case strings.Index(msg, *Nick+":") == 0:
+	if strings.Contains(msg, "\\a") {
+		bot.DongDong(actChannel, msg)
+	}
+
+	if strings.Contains(strings.ToLower(msg), "mett") {
 		bot.Mett()
-		bot.Mentioned(actChannel)
-	case matchedTwitter:
-		bot.GetTweet(actChannel, msg)
-	case strings.Contains(msg, "mett") || strings.Contains(msg, "Mett") || strings.Contains(msg, "METT"):
-		bot.Mett()
-	default:
+	} else {
 		bot.MsgSinceMett++
 		if bot.MsgSinceMett >= *Offmessages {
 			bot.Mett()
