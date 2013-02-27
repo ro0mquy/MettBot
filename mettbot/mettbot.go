@@ -77,7 +77,7 @@ func (bot *Mettbot) Syntax(channel string) {
 }
 
 func (bot *Mettbot) Mentioned(channel string) {
-	bot.Notice(channel, a.RandStr(a.Mention))
+	bot.Privmsg(channel, a.RandStr(a.Mention))
 }
 
 func (bot *Mettbot) Mett() {
