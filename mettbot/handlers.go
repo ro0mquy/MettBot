@@ -11,7 +11,16 @@ import (
 )
 
 func (bot *Mettbot) HandlerConnected()    { bot.Join(*Channel) }
-func (bot *Mettbot) HandlerDisconnected() { bot.Quitted <- true }
+
+func (bot *Mettbot) HandlerDisconnected() {
+	bot.Quitted <- true
+
+	// goirc sets the identity to a string beginning with '~'
+	// so the next time the bot tries to connect it gets an error from the server
+	if strings.HasPrefix(bot.Me.Ident, "~") {
+		bot.Me.Ident = *Nick
+	}
+}
 
 func (bot *Mettbot) HandlerJoin(line *irc.Line) {
 	time.Sleep(1000 * time.Millisecond)
