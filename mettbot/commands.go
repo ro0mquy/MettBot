@@ -44,7 +44,7 @@ func (bot *Mettbot) Command(actChannel, msg string, line *irc.Line) {
 	case cmd == "!quote":
 		bot.cQuote(actChannel, args, line.Nick)
 	case cmd == "!search":
-		bot.cSearch(actChannel, args)
+		bot.cSearch(line.Nick, args)
 	default:
 		bot.Syntax(actChannel)
 	}
@@ -143,7 +143,7 @@ func (bot *Mettbot) cSearch(channel, msg string) {
 		}
 
 		if ok && err == nil {
-			bot.Notice(channel, strconv.Itoa(n)+" "+quote)
+			bot.Privmsg(channel, strconv.Itoa(n)+" "+quote)
 		}
 	}
 }
