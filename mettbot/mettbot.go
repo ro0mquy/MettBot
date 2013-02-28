@@ -32,6 +32,8 @@ var Metts *string = flag.String("metts", "mett_metts.txt", "Metts database file"
 var Offtime *int = flag.Int("offtime", 4, "Number of hours of offtopic content befor posting mett content")
 var Offmessages *int = flag.Int("offmessages", 100, "Number of messages of offtopic content befor posting mett content")
 var Probability *float64 = flag.Float64("probability", 0.1, "Probability that the bot ignores a command")
+var MumbleServer *string = flag.String("mumbleserver", "avidrain.de:64738", "Mumble server")
+var MumbleTopicregex *string = flag.String("mumbletopicregex", "((?:^|\\|)[^|]*)audiomett:[^|]*?(\\s*(?:$|\\|))", "The regex to match Mumble topic snippet")
 var Twitterregex *string = flag.String("twitterregex", "\\S*twitter\\.com\\/\\S+\\/status(es)?\\/(\\d+)\\S*", "The regex to match Twitter URLs")
 var Firebird *float64 = flag.Float64("firebird", 0.05, "Probability firebird gets a question")
 
@@ -42,6 +44,7 @@ func init() {
 
 type Mettbot struct {
 	*irc.Conn
+	MumblePing *_mumbleping
 	Quitted         chan bool
 	QuotesPrnt      chan string
 	MettsPrnt       chan string
@@ -57,6 +60,7 @@ type Mettbot struct {
 func NewMettbot(nick string, args ...string) *Mettbot {
 	bot := &Mettbot{
 		irc.SimpleClient(nick, args...), // *irc.Conn
+		new(_mumbleping), // MumblePing
 		make(chan bool),                 // Quitted
 		make(chan string),               // QuotesPrnt
 		make(chan string),               // MettsPrnt
@@ -69,6 +73,7 @@ func NewMettbot(nick string, args ...string) *Mettbot {
 		0,                       // MsgSinceMett
 	}
 	bot.EnableStateTracking()
+	bot.MumblePing.InitMumblePing(bot)
 	return bot
 }
 

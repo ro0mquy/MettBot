@@ -10,9 +10,15 @@ import (
 	"time"
 )
 
-func (bot *Mettbot) HandlerConnected()    { bot.Join(*Channel) }
+func (bot *Mettbot) HandlerConnected() {
+       bot.Join(*Channel)
+       bot.MumblePing.StartMumblePing()
+}
 
-func (bot *Mettbot) HandlerDisconnected() { bot.Quitted <- true }
+func (bot *Mettbot) HandlerDisconnected() {
+       bot.MumblePing.StopMumblePing()
+       bot.Quitted <- true
+}
 
 func (bot *Mettbot) HandlerJoin(line *irc.Line) {
 	time.Sleep(1000 * time.Millisecond)
