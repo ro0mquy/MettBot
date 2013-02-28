@@ -33,7 +33,7 @@ func (m *_mumbleping) run() {
 	audiomettTopicRegexp := regexp.MustCompile(*MumbleTopicregex)
 	for {
 		select {
-		case <-time.After(4 * time.Second):
+		case <-time.After(30 * time.Second):
 			_, users, _, _, err := m.doMumblePing()
 			if err != nil {
 				log.Println(err)
