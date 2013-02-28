@@ -287,6 +287,9 @@ func (bot *Mettbot) DongDong(channel, msg string) {
 		notice += str + " "
 	}
 
+	if len(notice) > 400 {
+		notice = notice[:400]
+	}
 	bot.Notice(channel, notice)
 }
 
