@@ -275,7 +275,7 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 
 func (bot *Mettbot) firebird(channel string) {
 	time.Sleep(time.Duration(rand.Intn(3)+3) * time.Second)
-	bot.Notice(channel, a.RandStr(a.Firebird))
+	bot.Notice(channel, "\x034" + a.RandStr(a.Firebird))
 }
 
 func (bot *Mettbot) DongDong(channel, msg string) {
