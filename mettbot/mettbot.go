@@ -357,9 +357,6 @@ func (bot *Mettbot) ParseStdin() {
 					// disable flooding
 					bot.Flood = false
 				}
-				for i := 0; i < 20; i++ {
-					bot.Privmsg(*Channel, "salami!1!")
-				}
 			case idx == -1:
 				continue
 			case cmd[1] == 'q':
