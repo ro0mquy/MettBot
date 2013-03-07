@@ -75,7 +75,6 @@ var Mention []string = []string{
 var Firebird []string = []string{
 	"Wer ist überhaupt dieser firebird?",
 	"Gibt es firebird überhaupt?",
-	"firebird: ist das ipv6 im HaWo schon gefixt?",
 }
 
 var Dong []string = []string{
