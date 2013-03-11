@@ -64,6 +64,7 @@ var IgnoreCmd []string = []string{
 	"Talk with my non-existing hand",
 }
 
+/*
 var Mention []string = []string{
 	"Yes.",
 	"No.",
@@ -71,6 +72,7 @@ var Mention []string = []string{
 	"May the mett be with you",
 	"Hmm, what?",
 }
+*/
 
 var Firebird []string = []string{
 	"Wer ist überhaupt dieser firebird?",

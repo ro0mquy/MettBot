@@ -28,6 +28,15 @@ If there is no appearance of the word Mett for a certain time or number of messa
 
 The bot automagically detects and prints the content of tweets.
 
+### Chatting with AI
+
+If the bot gets mentioned, the text is processed using [prelude](https://code.google.com/p/prelude-csharp/) and the answer is posted to the channel again. Prelude is a self learning chatbot AI.
+
 ### Bugs and Improvements
 
 Feel free to crash the bot or make a pull request.
+
+### Dependencies
+
+* [`wdiff`](https://www.gnu.org/software/wdiff/)
+* [`mono`](http://www.mono-project.com/Start)

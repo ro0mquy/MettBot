@@ -14,13 +14,12 @@ import (
 )
 
 type _mumbleping struct {
-	bot *Mettbot
+	bot     *Mettbot
 	server  string
 	last    int32
 	running bool
 	quit    chan bool
 }
-
 
 func (m *_mumbleping) InitMumblePing(mett *Mettbot) {
 	m.bot = mett

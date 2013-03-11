@@ -36,6 +36,8 @@ var MumbleServer *string = flag.String("mumbleserver", "avidrain.de:64738", "Mum
 var MumbleTopicregex *string = flag.String("mumbletopicregex", "((?:^|\\|)[^|]*)audiomett:[^|]*?(\\s*(?:$|\\|))", "The regex to match Mumble topic snippet")
 var Twitterregex *string = flag.String("twitterregex", "\\S*twitter\\.com\\/\\S+\\/status(es)?\\/(\\d+)\\S*", "The regex to match Twitter URLs")
 var Firebird *float64 = flag.Float64("firebird", 0.001, "Probability firebird gets a question")
+var Preludebin *string = flag.String("preludebin", "prelude/preludeCMD.exe", "The path to the prelude binary")
+var Randomanswer *float64 = flag.Float64("randomanswer", 0.05, "The probability that the bot randomly answers to a users message")
 
 func init() {
 	flag.Parse()
@@ -44,7 +46,11 @@ func init() {
 
 type Mettbot struct {
 	*irc.Conn
-	MumblePing *_mumbleping
+	MumblePing      *_mumbleping
+	Prelude         *exec.Cmd
+	PreludeStdin    io.Writer
+	PreludeStdout   io.Reader
+	PreludeAnswer   chan string
 	Quitted         chan bool
 	QuotesPrnt      chan string
 	MettsPrnt       chan string
@@ -59,21 +65,45 @@ type Mettbot struct {
 
 func NewMettbot(nick string, args ...string) *Mettbot {
 	bot := &Mettbot{
-		irc.SimpleClient(nick, args...), // *irc.Conn
-		new(_mumbleping), // MumblePing
-		make(chan bool),                 // Quitted
-		make(chan string),               // QuotesPrnt
-		make(chan string),               // MettsPrnt
-		make(chan int),                  // QuotesLinesPrnt
-		make(chan int),                  // MettsLinesPrnt
-		make(chan string, 4),            // Input
-		make(chan bool),                 // IsMett
-		false,                           // ReallyQuit
+		irc.SimpleClient(nick, args...),   // *irc.Conn
+		new(_mumbleping),                  // MumblePing
+		exec.Command("mono", *Preludebin), // Prelude
+		nil,                               // PreludeStdin
+		nil,                               // PreludeStdout
+		make(chan string),                 // PreludeAnswer
+		make(chan bool),                   // Quitted
+		make(chan string),                 // QuotesPrnt
+		make(chan string),                 // MettsPrnt
+		make(chan int),                    // QuotesLinesPrnt
+		make(chan int),                    // MettsLinesPrnt
+		make(chan string, 4),              // Input
+		make(chan bool),                   // IsMett
+		false,                             // ReallyQuit
 		make(map[string]string), // Topics
 		0,                       // MsgSinceMett
 	}
 	bot.EnableStateTracking()
 	bot.MumblePing.InitMumblePing(bot)
+	bot.Flood = true
+
+	bot.Prelude.Env = append(bot.Prelude.Env, "MONO_IOMAP=case")
+
+	var err error
+	bot.PreludeStdin, err = bot.Prelude.StdinPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bot.PreludeStdout, err = bot.Prelude.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = bot.Prelude.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return bot
 }
 
@@ -81,8 +111,34 @@ func (bot *Mettbot) Syntax(channel string) {
 	bot.Notice(channel, a.RandStr(a.Syntax))
 }
 
-func (bot *Mettbot) Mentioned(channel string) {
-	bot.Privmsg(channel, a.RandStr(a.Mention))
+func (bot *Mettbot) Mentioned(channel, msg string) {
+	if strings.HasPrefix(msg, "exit") {
+		msg = " " + msg
+	}
+	_, err := io.WriteString(bot.PreludeStdin, msg+"\n")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	answer := <-bot.PreludeAnswer
+	bot.Privmsg(channel, answer)
+}
+
+func (bot *Mettbot) MindReading() {
+	stdout := bufio.NewReader(bot.PreludeStdout)
+	stdout.ReadString('\n')
+	stdout.ReadString('\n')
+	for {
+		out, err := stdout.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+		if strings.HasPrefix(out, "You say: Prelude says: ") {
+			out = out[23:]
+		}
+		bot.PreludeAnswer <- out
+	}
 }
 
 func (bot *Mettbot) Mett() {
@@ -275,7 +331,7 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 
 func (bot *Mettbot) firebird(channel string) {
 	time.Sleep(time.Duration(rand.Intn(3)+3) * time.Second)
-	bot.Notice(channel, "\x0313" + a.RandStr(a.Firebird))
+	bot.Notice(channel, "\x0313"+a.RandStr(a.Firebird))
 }
 
 func (bot *Mettbot) DongDong(channel, msg string) {
@@ -418,6 +474,13 @@ func (bot *Mettbot) ParseStdin() {
 						continue
 					}
 					*Firebird = num
+				case "randomanswer":
+					num, err := strconv.ParseFloat(val, 64)
+					if err != nil {
+						fmt.Println("No Flaot")
+						continue
+					}
+					*Randomanswer = num
 				default:
 					fmt.Println("Unknown variable")
 				}

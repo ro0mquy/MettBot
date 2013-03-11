@@ -11,13 +11,13 @@ import (
 )
 
 func (bot *Mettbot) HandlerConnected() {
-       bot.Join(*Channel)
-       bot.MumblePing.StartMumblePing()
+	bot.Join(*Channel)
+	bot.MumblePing.StartMumblePing()
 }
 
 func (bot *Mettbot) HandlerDisconnected() {
-       bot.MumblePing.StopMumblePing()
-       bot.Quitted <- true
+	bot.MumblePing.StopMumblePing()
+	bot.Quitted <- true
 }
 
 func (bot *Mettbot) HandlerJoin(line *irc.Line) {
@@ -49,8 +49,14 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 		}
 	}
 
-	if strings.HasPrefix(msg, *Nick+":") {
-		bot.Mentioned(actChannel)
+	if strings.HasPrefix(msg, *Nick+":") || strings.Contains(msg, "mettbot") || rand.Float64() < *Randomanswer {
+		filteredMsg := msg
+		if strings.HasPrefix(msg, *Nick+":") {
+			if len(msg) > len(*Nick)+2 {
+				filteredMsg = msg[len(*Nick)+2:]
+			}
+		}
+		bot.Mentioned(actChannel, filteredMsg)
 	}
 
 	if matchedTwitter, _ := regexp.MatchString(*Twitterregex, msg); matchedTwitter {
