@@ -48,8 +48,8 @@ type Mettbot struct {
 	*irc.Conn
 	MumblePing      *_mumbleping
 	Prelude         *exec.Cmd
-	PreludeStdin    io.Writer
-	PreludeStdout   io.Reader
+	PreludeStdin    io.WriteCloser
+	PreludeStdout   io.ReadCloser
 	PreludeAnswer   chan string
 	Quitted         chan bool
 	QuotesPrnt      chan string
@@ -65,30 +65,76 @@ type Mettbot struct {
 
 func NewMettbot(nick string, args ...string) *Mettbot {
 	bot := &Mettbot{
-		irc.SimpleClient(nick, args...),   // *irc.Conn
-		new(_mumbleping),                  // MumblePing
-		exec.Command("mono", *Preludebin), // Prelude
-		nil,                               // PreludeStdin
-		nil,                               // PreludeStdout
-		make(chan string),                 // PreludeAnswer
-		make(chan bool),                   // Quitted
-		make(chan string),                 // QuotesPrnt
-		make(chan string),                 // MettsPrnt
-		make(chan int),                    // QuotesLinesPrnt
-		make(chan int),                    // MettsLinesPrnt
-		make(chan string, 4),              // Input
-		make(chan bool),                   // IsMett
-		false,                             // ReallyQuit
+		irc.SimpleClient(nick, args...), // *irc.Conn
+		new(_mumbleping),                // MumblePing
+		nil,                             // Prelude
+		nil,                             // PreludeStdin
+		nil,                             // PreludeStdout
+		make(chan string),               // PreludeAnswer
+		make(chan bool),                 // Quitted
+		make(chan string),               // QuotesPrnt
+		make(chan string),               // MettsPrnt
+		make(chan int),                  // QuotesLinesPrnt
+		make(chan int),                  // MettsLinesPrnt
+		make(chan string, 4),            // Input
+		make(chan bool),                 // IsMett
+		false,                           // ReallyQuit
 		make(map[string]string), // Topics
 		0,                       // MsgSinceMett
 	}
 	bot.EnableStateTracking()
 	bot.MumblePing.InitMumblePing(bot)
 	bot.Flood = true
+	bot.StartPrelude()
 
+	return bot
+}
+
+func (bot *Mettbot) Syntax(channel string) {
+	bot.Notice(channel, a.RandStr(a.Syntax))
+}
+
+func (bot *Mettbot) Learn(msg string) (answer string) {
+	if strings.HasPrefix(msg, "exit") {
+		msg = " " + msg
+	}
+	_, err := io.WriteString(bot.PreludeStdin, msg+"\n")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	answer = <-bot.PreludeAnswer
+	return
+}
+
+func (bot *Mettbot) MindReading() {
+	stdout := bufio.NewReader(bot.PreludeStdout)
+	for i := 0; ; i++ {
+		if i >= 20 {
+			i %= 20
+			bot.StopPrelude()
+			bot.StartPrelude()
+			stdout = bufio.NewReader(bot.PreludeStdout)
+		}
+
+		out, err := stdout.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+		if strings.HasPrefix(out, "You say: Prelude says: ") {
+			out = out[23:]
+		}
+		bot.PreludeAnswer <- out
+	}
+}
+
+func (bot *Mettbot) StartPrelude() {
+	var err error
+
+	bot.Prelude = exec.Command("mono", *Preludebin)
 	bot.Prelude.Env = append(bot.Prelude.Env, "MONO_IOMAP=case")
 
-	var err error
 	bot.PreludeStdin, err = bot.Prelude.StdinPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -101,43 +147,27 @@ func NewMettbot(nick string, args ...string) *Mettbot {
 
 	err = bot.Prelude.Start()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("StartPrelude(): ", err)
 	}
 
-	return bot
-}
-
-func (bot *Mettbot) Syntax(channel string) {
-	bot.Notice(channel, a.RandStr(a.Syntax))
-}
-
-func (bot *Mettbot) Mentioned(channel, msg string) {
-	if strings.HasPrefix(msg, "exit") {
-		msg = " " + msg
-	}
-	_, err := io.WriteString(bot.PreludeStdin, msg+"\n")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	answer := <-bot.PreludeAnswer
-	bot.Privmsg(channel, answer)
-}
-
-func (bot *Mettbot) MindReading() {
 	stdout := bufio.NewReader(bot.PreludeStdout)
 	stdout.ReadString('\n')
 	stdout.ReadString('\n')
-	for {
-		out, err := stdout.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-		}
-		if strings.HasPrefix(out, "You say: Prelude says: ") {
-			out = out[23:]
-		}
-		bot.PreludeAnswer <- out
+}
+
+func (bot *Mettbot) StopPrelude() {
+	_, err := io.WriteString(bot.PreludeStdin, "exit\n")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	bot.PreludeStdin.Close()
+	bot.PreludeStdout.Close()
+
+	err = bot.Prelude.Wait()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 

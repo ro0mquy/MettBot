@@ -49,14 +49,25 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 		}
 	}
 
-	if strings.HasPrefix(msg, *Nick+":") || strings.Contains(msg, "mettbot") || rand.Float64() < *Randomanswer {
+	if line.Args[0] != *Nick {
 		filteredMsg := msg
-		if strings.HasPrefix(msg, *Nick+":") {
-			if len(msg) > len(*Nick)+2 {
-				filteredMsg = msg[len(*Nick)+2:]
+		dpidx := strings.Index(msg, ": ")
+		if dpidx != -1 {
+			if len(msg) > dpidx+2 {
+				filteredMsg = msg[dpidx+2:]
+			} else {
+				filteredMsg = ""
 			}
 		}
-		bot.Mentioned(actChannel, filteredMsg)
+		if filteredMsg != "" {
+			if strings.HasPrefix(msg, *Nick+":") || strings.Contains(msg, "mettbot") || rand.Float64() < *Randomanswer {
+				answer := bot.Learn(filteredMsg)
+				time.Sleep(time.Duration(rand.Intn(1500)+500) * time.Millisecond)
+				bot.Privmsg(actChannel, answer)
+			} else {
+				bot.Learn(filteredMsg)
+			}
+		}
 	}
 
 	if matchedTwitter, _ := regexp.MatchString(*Twitterregex, msg); matchedTwitter {
