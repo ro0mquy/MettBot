@@ -50,6 +50,7 @@ type Mettbot struct {
 	Prelude         *exec.Cmd
 	PreludeStdin    io.WriteCloser
 	PreludeStdout   io.ReadCloser
+	PreludeQuestion chan string
 	PreludeAnswer   chan string
 	Quitted         chan bool
 	QuotesPrnt      chan string
@@ -70,6 +71,7 @@ func NewMettbot(nick string, args ...string) *Mettbot {
 		nil,                             // Prelude
 		nil,                             // PreludeStdin
 		nil,                             // PreludeStdout
+		make(chan string),               // PreludeQuestion
 		make(chan string),               // PreludeAnswer
 		make(chan bool),                 // Quitted
 		make(chan string),               // QuotesPrnt
@@ -98,12 +100,8 @@ func (bot *Mettbot) Learn(msg string) (answer string) {
 	if strings.HasPrefix(msg, "exit") {
 		msg = " " + msg
 	}
-	_, err := io.WriteString(bot.PreludeStdin, msg+"\n")
-	if err != nil {
-		log.Println(err)
-		return
-	}
 
+	bot.PreludeQuestion <- msg
 	answer = <-bot.PreludeAnswer
 	return
 }
@@ -116,6 +114,13 @@ func (bot *Mettbot) MindReading() {
 			bot.StopPrelude()
 			bot.StartPrelude()
 			stdout = bufio.NewReader(bot.PreludeStdout)
+		}
+
+		msg := <-bot.PreludeQuestion
+		_, err := io.WriteString(bot.PreludeStdin, msg+"\n")
+		if err != nil {
+			log.Println(err)
+			continue
 		}
 
 		out, err := stdout.ReadString('\n')
