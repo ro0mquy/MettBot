@@ -322,7 +322,7 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 		return
 	}
 	sub := regex.FindStringSubmatch(url)
-	tweetUrl := fmt.Sprintf("https://api.twitter.com/1/statuses/show.json?id=%v&trim_user=false&include_entities=no", sub[2])
+	tweetUrl := fmt.Sprintf("https://api.twitter.com/1/statuses/show.json?id=%v&trim_user=false&include_entities=true", sub[2])
 
 	resp, err := http.Get(tweetUrl)
 	if err != nil {
@@ -337,12 +337,20 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 		return
 	}
 
+	type linkurl struct {
+		Url          string
+		Expanded_url string
+	}
+	type entity struct {
+		Urls []linkurl
+	}
 	type usr struct {
 		Screen_name string
 	}
 	type tweet struct {
-		Text string
-		User usr
+		Text     string
+		User     usr
+		Entities entity
 	}
 
 	var twt tweet
@@ -352,7 +360,11 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 		return
 	}
 
-	tweetText := html.UnescapeString(twt.Text)
+	tweetText := twt.Text
+	for _, u := range twt.Entities.Urls {
+		tweetText = strings.Replace(tweetText, u.Url, u.Expanded_url, -1)
+	}
+	tweetText = html.UnescapeString(tweetText)
 
 	tweetText = strings.Map(func(r rune) rune {
 		if r < ' ' {
