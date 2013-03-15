@@ -465,6 +465,7 @@ func (bot *Mettbot) ParseStdin() {
 			case cmd[1] == 'q':
 				bot.ReallyQuit = true
 				bot.Quit(msg)
+				bot.StopPrelude()
 			case cmd[1] == 'j':
 				bot.Join(msg)
 			case cmd[1] == 'p':
