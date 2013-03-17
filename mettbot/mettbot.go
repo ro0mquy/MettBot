@@ -66,23 +66,23 @@ type Mettbot struct {
 
 func NewMettbot(nick string, args ...string) *Mettbot {
 	bot := &Mettbot{
-		irc.SimpleClient(nick, args...), // *irc.Conn
-		new(_mumbleping),                // MumblePing
-		nil,                             // Prelude
-		nil,                             // PreludeStdin
-		nil,                             // PreludeStdout
-		make(chan string),               // PreludeQuestion
-		make(chan string),               // PreludeAnswer
-		make(chan bool),                 // Quitted
-		make(chan string),               // QuotesPrnt
-		make(chan string),               // MettsPrnt
-		make(chan int),                  // QuotesLinesPrnt
-		make(chan int),                  // MettsLinesPrnt
-		make(chan string, 4),            // Input
-		make(chan bool),                 // IsMett
-		false,                           // ReallyQuit
-		make(map[string]string), // Topics
-		0,                       // MsgSinceMett
+		irc.Conn:        irc.SimpleClient(nick, args...),
+		MumblePing:      new(_mumbleping),
+		Prelude:         nil,
+		PreludeStdin:    nil,
+		PreludeStdout:   nil,
+		PreludeQuestion: make(chan string),
+		PreludeAnswer:   make(chan string),
+		Quitted:         make(chan bool),
+		QuotesPrnt:      make(chan string),
+		MettsPrnt:       make(chan string),
+		QuotesLinesPrnt: make(chan int),
+		MettsLinesPrnt:  make(chan int),
+		Input:           make(chan string, 4),
+		IsMett:          make(chan bool),
+		ReallyQuit:      false,
+		Topics:          make(map[string]string),
+		MsgSinceMett:    0,
 	}
 	bot.EnableStateTracking()
 	bot.MumblePing.InitMumblePing(bot)
