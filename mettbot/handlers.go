@@ -65,7 +65,7 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 				time.Sleep(time.Duration(rand.Intn(1500)+500) * time.Millisecond)
 				bot.Privmsg(actChannel, answer)
 			} else {
-				bot.Learn(filteredMsg)
+				//bot.Learn(filteredMsg)
 			}
 		}
 	}
