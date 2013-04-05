@@ -36,7 +36,7 @@ var MumbleServer *string = flag.String("mumbleserver", "avidrain.de:64738", "Mum
 var MumbleTopicregex *string = flag.String("mumbletopicregex", "((?:^|\\|)[^|]*)audiomett:[^|]*?(\\s*(?:$|\\|))", "The regex to match Mumble topic snippet")
 var Twitterregex *string = flag.String("twitterregex", "\\S*twitter\\.com\\/\\S+\\/status(es)?\\/(\\d+)\\S*", "The regex to match Twitter URLs")
 var Firebird *float64 = flag.Float64("firebird", 0.001, "Probability firebird gets a question")
-var Randomanswer *float64 = flag.Float64("randomanswer", 0.05, "The probability that the bot randomly answers to a users message")
+var Randomanswer *float64 = flag.Float64("randomanswer", 0.001, "The probability that the bot randomly answers to a users message")
 
 func init() {
 	flag.Parse()
