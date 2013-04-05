@@ -290,7 +290,12 @@ func (bot *Mettbot) firebird(channel string) {
 }
 
 func (bot *Mettbot) DongDong(channel, msg string) {
-	count := strings.Count(msg, "\\a")
+	count := strings.Count(msg, `\a`)
+	count -= strings.Count(msg, `\\a`)
+	if count < 1 {
+		return
+	}
+
 	str := a.RandStr(a.Dong)
 	notice := ""
 
