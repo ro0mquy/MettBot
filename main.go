@@ -30,9 +30,6 @@ func main() {
 	// Go routine to post regulary mett content
 	go mett.CheckMett()
 
-	// set up a goroutine to read perludes answers
-	go mett.MindReading()
-
 	for !mett.ReallyQuit {
 		// connect to server
 		if err := mett.Connect(*mettbot.Host); err != nil {

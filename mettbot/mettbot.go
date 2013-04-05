@@ -36,7 +36,6 @@ var MumbleServer *string = flag.String("mumbleserver", "avidrain.de:64738", "Mum
 var MumbleTopicregex *string = flag.String("mumbletopicregex", "((?:^|\\|)[^|]*)audiomett:[^|]*?(\\s*(?:$|\\|))", "The regex to match Mumble topic snippet")
 var Twitterregex *string = flag.String("twitterregex", "\\S*twitter\\.com\\/\\S+\\/status(es)?\\/(\\d+)\\S*", "The regex to match Twitter URLs")
 var Firebird *float64 = flag.Float64("firebird", 0.001, "Probability firebird gets a question")
-var Preludebin *string = flag.String("preludebin", "prelude/preludeCMD.exe", "The path to the prelude binary")
 var Randomanswer *float64 = flag.Float64("randomanswer", 0.05, "The probability that the bot randomly answers to a users message")
 
 func init() {
@@ -47,11 +46,6 @@ func init() {
 type Mettbot struct {
 	*irc.Conn
 	MumblePing      *_mumbleping
-	Prelude         *exec.Cmd
-	PreludeStdin    io.WriteCloser
-	PreludeStdout   io.ReadCloser
-	PreludeQuestion chan string
-	PreludeAnswer   chan string
 	Quitted         chan bool
 	QuotesPrnt      chan string
 	MettsPrnt       chan string
@@ -68,11 +62,6 @@ func NewMettbot(nick string, args ...string) *Mettbot {
 	bot := &Mettbot{
 		irc.Conn:        irc.SimpleClient(nick, args...),
 		MumblePing:      new(_mumbleping),
-		Prelude:         nil,
-		PreludeStdin:    nil,
-		PreludeStdout:   nil,
-		PreludeQuestion: make(chan string),
-		PreludeAnswer:   make(chan string),
 		Quitted:         make(chan bool),
 		QuotesPrnt:      make(chan string),
 		MettsPrnt:       make(chan string),
@@ -87,93 +76,12 @@ func NewMettbot(nick string, args ...string) *Mettbot {
 	bot.EnableStateTracking()
 	bot.MumblePing.InitMumblePing(bot)
 	bot.Flood = true
-	bot.StartPrelude()
 
 	return bot
 }
 
 func (bot *Mettbot) Syntax(channel string) {
 	bot.Notice(channel, a.RandStr(a.Syntax))
-}
-
-func (bot *Mettbot) Learn(msg string) (answer string) {
-	if strings.HasPrefix(msg, "exit") {
-		msg = " " + msg
-	}
-
-	bot.PreludeQuestion <- msg
-	answer = <-bot.PreludeAnswer
-	return
-}
-
-func (bot *Mettbot) MindReading() {
-	stdout := bufio.NewReader(bot.PreludeStdout)
-	for i := 0; ; i++ {
-		if i >= 20 {
-			i %= 20
-			bot.StopPrelude()
-			bot.StartPrelude()
-			stdout = bufio.NewReader(bot.PreludeStdout)
-		}
-
-		msg := <-bot.PreludeQuestion
-		_, err := io.WriteString(bot.PreludeStdin, msg+"\n")
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		out, err := stdout.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-		}
-		if strings.HasPrefix(out, "You say: Prelude says: ") {
-			out = out[23:]
-		}
-		bot.PreludeAnswer <- out
-	}
-}
-
-func (bot *Mettbot) StartPrelude() {
-	var err error
-
-	bot.Prelude = exec.Command("mono", *Preludebin)
-	bot.Prelude.Env = append(bot.Prelude.Env, "MONO_IOMAP=case")
-
-	bot.PreludeStdin, err = bot.Prelude.StdinPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	bot.PreludeStdout, err = bot.Prelude.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = bot.Prelude.Start()
-	if err != nil {
-		log.Fatal("StartPrelude(): ", err)
-	}
-
-	stdout := bufio.NewReader(bot.PreludeStdout)
-	stdout.ReadString('\n')
-	stdout.ReadString('\n')
-}
-
-func (bot *Mettbot) StopPrelude() {
-	_, err := io.WriteString(bot.PreludeStdin, "exit\n")
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	bot.PreludeStdin.Close()
-	bot.PreludeStdout.Close()
-
-	err = bot.Prelude.Wait()
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func (bot *Mettbot) Mett() {
@@ -465,7 +373,6 @@ func (bot *Mettbot) ParseStdin() {
 			case cmd[1] == 'q':
 				bot.ReallyQuit = true
 				bot.Quit(msg)
-				bot.StopPrelude()
 			case cmd[1] == 'j':
 				bot.Join(msg)
 			case cmd[1] == 'p':

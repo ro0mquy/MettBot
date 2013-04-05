@@ -49,26 +49,32 @@ func (bot *Mettbot) HandlerPrivmsg(line *irc.Line) {
 		}
 	}
 
-	if line.Args[0] != *Nick {
-		filteredMsg := msg
-		dpidx := strings.Index(msg, ": ")
-		if dpidx != -1 {
-			if len(msg) > dpidx+2 {
-				filteredMsg = msg[dpidx+2:]
-			} else {
-				filteredMsg = ""
-			}
-		}
-		if filteredMsg != "" {
-			if strings.HasPrefix(msg, *Nick+":") || strings.Contains(msg, "mettbot") || rand.Float64() < *Randomanswer {
-				answer := bot.Learn(filteredMsg)
-				time.Sleep(time.Duration(rand.Intn(1500)+500) * time.Millisecond)
-				bot.Privmsg(actChannel, answer)
-			} else {
-				//bot.Learn(filteredMsg)
-			}
-		}
+	if strings.HasPrefix(msg, *Nick+":") || strings.Contains(msg, "mettbot") || rand.Float64() < *Randomanswer {
+		bot.Privmsg(actChannel, fmt.Sprintf(a.RandStr(a.Mention)))
 	}
+
+	/*
+		if line.Args[0] != *Nick {
+			filteredMsg := msg
+			dpidx := strings.Index(msg, ": ")
+			if dpidx != -1 {
+				if len(msg) > dpidx+2 {
+					filteredMsg = msg[dpidx+2:]
+				} else {
+					filteredMsg = ""
+				}
+			}
+			if filteredMsg != "" {
+				if strings.HasPrefix(msg, *Nick+":") || strings.Contains(msg, "mettbot") || rand.Float64() < *Randomanswer {
+					answer := bot.Learn(filteredMsg)
+					time.Sleep(time.Duration(rand.Intn(1500)+500) * time.Millisecond)
+					bot.Privmsg(actChannel, answer)
+				} else {
+					//bot.Learn(filteredMsg)
+				}
+			}
+		}
+	*/
 
 	if matchedTwitter, _ := regexp.MatchString(*Twitterregex, msg); matchedTwitter {
 		bot.GetTweet(actChannel, msg)
