@@ -24,6 +24,7 @@ import (
 	"time"
 )
 
+var Config *string = flag.String("config", ".mettbot", "File that contains Twitter key and secret in JSON format")
 var Host *string = flag.String("host", "irc.ps0ke.de:2342", "IRC server")
 var Channel *string = flag.String("channel", "#metttest", "IRC channel")
 var Nick *string = flag.String("nick", "rohmett", "IRC nick")
@@ -231,7 +232,33 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 
 	// doing oauth
 	if *TwitterOAuthToken == "" {
-		toBase64 := []byte("H9vR12b1AvCGAiWrDoteA:CA9V9qu8SGnud8ObpY4u5iFcwyYWw8zyT03zHeWM")
+		keyFile, err := ioutil.ReadFile(*Config)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		type configFile struct {
+			Twitter_consumer_key    string
+			Twitter_consumer_secret string
+		}
+
+		var config configFile
+		err = json.Unmarshal(keyFile, &config)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		if config.Twitter_consumer_key == "" || config.Twitter_consumer_secret == "" {
+			log.Println("You have to specify a key and a secret in", *Config)
+			return
+		}
+
+		key := config.Twitter_consumer_key
+		secret := config.Twitter_consumer_secret
+
+		toBase64 := []byte(key + ":" + secret)
 		encodedKey := base64.StdEncoding.EncodeToString(toBase64)
 		bufferHTTPBody := bytes.NewBufferString("grant_type=client_credentials")
 

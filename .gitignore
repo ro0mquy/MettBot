@@ -1,3 +1,4 @@
 *.txt
 mettbot_*_*
+.mettbot
 *.mdu
