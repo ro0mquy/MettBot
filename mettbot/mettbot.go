@@ -3,6 +3,8 @@ package mettbot
 import (
 	a "./answers"
 	"bufio"
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -35,6 +37,7 @@ var Probability *float64 = flag.Float64("probability", 0.1, "Probability that th
 var MumbleServer *string = flag.String("mumbleserver", "avidrain.de:64738", "Mumble server")
 var MumbleTopicregex *string = flag.String("mumbletopicregex", "((?:^|\\|)[^|]*)audiomett:[^|]*?(\\s*(?:$|\\|))", "The regex to match Mumble topic snippet")
 var Twitterregex *string = flag.String("twitterregex", "\\S*twitter\\.com\\/\\S+\\/status(es)?\\/(\\d+)\\S*", "The regex to match Twitter URLs")
+var TwitterOAuthToken *string = flag.String("oauth", "", "The access token for the Twitter API")
 var Firebird *float64 = flag.Float64("firebird", 0.001, "Probability firebird gets a question")
 var Randomanswer *float64 = flag.Float64("randomanswer", 0.001, "The probability that the bot randomly answers to a users message")
 
@@ -224,15 +227,63 @@ func (bot *Mettbot) diffTopic(oldTopic, newTopic string) string {
 }
 
 func (bot *Mettbot) GetTweet(channel, url string) {
+	client := &http.Client{}
+
+	// doing oauth
+	if *TwitterOAuthToken == "" {
+		toBase64 := []byte("H9vR12b1AvCGAiWrDoteA:CA9V9qu8SGnud8ObpY4u5iFcwyYWw8zyT03zHeWM")
+		encodedKey := base64.StdEncoding.EncodeToString(toBase64)
+		bufferHTTPBody := bytes.NewBufferString("grant_type=client_credentials")
+
+		requestOAuth, err := http.NewRequest("POST", "https://api.twitter.com/oauth2/token", bufferHTTPBody)
+		requestOAuth.Header.Add("Authorization", "Basic "+encodedKey)
+		requestOAuth.Header.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+
+		responseOAuth, err := client.Do(requestOAuth)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		defer responseOAuth.Body.Close()
+		bodyOAuth, err := ioutil.ReadAll(responseOAuth.Body)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		type oauthAnswer struct {
+			Token_type   string
+			Access_token string
+		}
+
+		var answer oauthAnswer
+		err = json.Unmarshal(bodyOAuth, &answer)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		if answer.Token_type != "bearer" {
+			log.Println("False token type:", answer.Token_type)
+			return
+		}
+
+		*TwitterOAuthToken = answer.Access_token
+	}
+
+	//fetching tweet
 	regex, err := regexp.Compile(*Twitterregex)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	sub := regex.FindStringSubmatch(url)
-	tweetUrl := fmt.Sprintf("https://api.twitter.com/1/statuses/show.json?id=%v&trim_user=false&include_entities=true", sub[2])
+	tweetUrl := fmt.Sprintf("https://api.twitter.com/1.1/statuses/show.json?id=%v&trim_user=false&include_entities=true", sub[2])
 
-	resp, err := http.Get(tweetUrl)
+	request, err := http.NewRequest("GET", tweetUrl, nil)
+	request.Header.Add("Authorization", "Bearer "+*TwitterOAuthToken)
+
+	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)
 		return
@@ -255,10 +306,15 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 	type usr struct {
 		Screen_name string
 	}
+	type apiError struct {
+		Message string
+		Code    int
+	}
 	type tweet struct {
 		Text     string
 		User     usr
 		Entities entity
+		Errors   []apiError
 	}
 
 	var twt tweet
@@ -266,6 +322,13 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 	if err != nil {
 		log.Println(err)
 		return
+	}
+	for _, e := range twt.Errors {
+		if e.Code == 89 {
+			log.Println(e.Message)
+			*TwitterOAuthToken = ""
+			return
+		}
 	}
 
 	tweetText := twt.Text
@@ -280,6 +343,11 @@ func (bot *Mettbot) GetTweet(channel, url string) {
 		}
 		return r
 	}, tweetText)
+
+	if twt.User.Screen_name == "" || tweetText == "" {
+		log.Println("Error in tweet:\n", string(body), "\nUser:", twt.User.Screen_name, "\nTweet text:", tweetText)
+		return
+	}
 
 	bot.Notice(channel, "@"+twt.User.Screen_name+": "+tweetText)
 }
