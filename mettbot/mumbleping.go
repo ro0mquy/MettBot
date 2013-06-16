@@ -91,6 +91,7 @@ log.Println("Connecting to Server...")
 	if err != nil {
 		return
 	}
+	conn.SetDeadline(time.Now().Add(5 * time.Second))
 
 	// Send request
 	request := make([]byte, 12)
