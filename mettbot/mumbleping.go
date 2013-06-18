@@ -79,14 +79,12 @@ func (m *_mumbleping) StopMumblePing() {
 }
 
 func (m *_mumbleping) doMumblePing() (version string, users_connected, users_maximum, allowed_bandwidth int32, err error) {
-log.Println("Pinging Mumble server...")
 	// Get UDPConn
-log.Println("Doing address lookup...")
 	addr, err := net.ResolveUDPAddr("udp", m.server)
 	if err != nil {
 		return
 	}
-log.Println("Connecting to Server...")
+
 	conn, err := net.DialUDP("udp", nil, addr)
 	if err != nil {
 		return
@@ -105,7 +103,7 @@ log.Println("Connecting to Server...")
 			return
 		}
 	}
-log.Println("Sending request...")
+
 	n, err := conn.Write(request)
 	if err != nil {
 		return
@@ -116,7 +114,6 @@ log.Println("Sending request...")
 	}
 
 	// Read response
-log.Println("Reading respons...")
 	response := make([]byte, 24)
 	n, err = conn.Read(response)
 	if err != nil {
@@ -126,7 +123,6 @@ log.Println("Reading respons...")
 	}
 
 	// Verify response
-log.Println("Verifing response...")
 	for i := 4; i < 4+8; i++ {
 		if response[i] != request[i] {
 			err = errors.New("Response ident does not match request ident")
@@ -149,6 +145,5 @@ log.Println("Verifing response...")
 		return
 	}
 
-log.Println("Done pinging.")
 	return
 }
