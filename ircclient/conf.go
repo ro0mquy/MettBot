@@ -4,7 +4,7 @@ package ircclient
 // and the locks on it.
 
 import (
-	"github.com/kless/goconfig/config"
+	"github.com/robfig/config"
 	"log"
 	"os"
 	"sync"

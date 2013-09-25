@@ -10,7 +10,7 @@ import (
 
 func main() {
 	rand.Seed(time.Now().Unix())
-	s := ircclient.NewIRCClient("go-faui2k11.cfg")
+	s := ircclient.NewIRCClient("mettbot.cfg")
 	s.RegisterPlugin(new(plugins.KexecPlugin))
 	s.RegisterPlugin(new(plugins.ListPlugins))
 	s.RegisterPlugin(plugins.NewLoggerPlugin("irclogs"))
