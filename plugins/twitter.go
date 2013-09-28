@@ -1,47 +1,51 @@
 package plugins
 
 import (
-	"bytes"
 	"../ircclient"
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"html"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"encoding/base64"
-	"encoding/json"
-	"html"
 	"regexp"
 	"strings"
 )
 
 const (
-	twitter_regex = `\S*twitter\.com\/\S+\/status(es)?\/(\d+)\S*`
+	twitter_regex   = `\S*twitter\.com\/\S+\/status(es)?\/(\d+)\S*`
 	twitter_api_url = `https://api.twitter.com/1.1/statuses/show.json?id=%v&trim_user=false&include_entities=true`
 )
 
-type linkurl struct {
-	Url          string
-	Expanded_url string
-}
-type entity struct {
-	Urls []linkurl
-}
-type usr struct {
-	Screen_name string
-}
-type apiError struct {
-	Message string
-	Code    int
-}
 type tweet struct {
-	Text     string
-	User     usr
-	Entities entity
-	Errors   []apiError
+	Text string
+
+	User struct {
+		Screen_name string
+	}
+
+	Entities struct {
+		Urls []struct {
+			Url          string
+			Expanded_url string
+		}
+	}
+
+	Errors []struct {
+		Message string
+		Code    int
+	}
+}
+
+type oauthAnswer struct {
+	Token_type   string
+	Access_token string
 }
 
 type TwitterPlugin struct {
-	ic *ircclient.IRCClient
+	ic    *ircclient.IRCClient
 	regex *regexp.Regexp
 }
 
@@ -79,7 +83,7 @@ func (q *TwitterPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		return
 	}
 
-	twt, err := q.fetchTweet(subs[2]); // second group of regex is searched tweet id
+	twt, err := q.fetchTweet(subs[2]) // second group of regex is searched tweet id
 	if err != nil {
 		log.Println(err)
 		return
@@ -87,12 +91,12 @@ func (q *TwitterPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 
 	message := "@" + twt.User.Screen_name + ": " + twt.Text
 	var target string
-        if msg.Target != q.ic.GetStringOption("Server", "nick") {
-                target = msg.Target
-        } else {
-                target = strings.SplitN(msg.Source, "!", 2)[0]
-        }
-        q.ic.SendLine("NOTICE " + target + " :" + message)
+	if msg.Target != q.ic.GetStringOption("Server", "nick") {
+		target = msg.Target
+	} else {
+		target = strings.SplitN(msg.Source, "!", 2)[0]
+	}
+	q.ic.SendLine("NOTICE " + target + " :" + message)
 }
 
 func (q *TwitterPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
@@ -111,7 +115,7 @@ func (q *TwitterPlugin) fetchTweet(tweetId string) (twt tweet, err error) {
 	}
 
 	request, err := http.NewRequest("GET", tweetUrl, nil)
-	request.Header.Add("Authorization", "Bearer " + oAuthToken)
+	request.Header.Add("Authorization", "Bearer "+oAuthToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(request)
@@ -188,11 +192,6 @@ func (q *TwitterPlugin) getOAuthToken() (err error) {
 	bodyOAuth, err := ioutil.ReadAll(responseOAuth.Body)
 	if err != nil {
 		return
-	}
-
-	type oauthAnswer struct {
-		Token_type   string
-		Access_token string
 	}
 
 	var answer oauthAnswer
