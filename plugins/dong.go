@@ -55,13 +55,7 @@ func (q *DongPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		message = message[:400]
 	}
 
-	var target string
-	if msg.Target != q.ic.GetStringOption("Server", "nick") {
-		target = msg.Target
-	} else {
-		target = strings.SplitN(msg.Source, "!", 2)[0]
-	}
-	q.ic.SendLine("NOTICE " + target + " :" + message)
+	q.ic.ReplyMsg(msg, message)
 }
 
 func (q *DongPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {

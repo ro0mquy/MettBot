@@ -350,6 +350,15 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 	}
 	ic.SendLine("PRIVMSG " + target + " :" + message)
 }
+func (ic *IRCClient) ReplyMsg(msg *IRCMessage, message string) {
+	var target string
+	if msg.Target != ic.GetStringOption("Server", "nick") {
+		target = msg.Target
+	} else {
+		target = strings.SplitN(msg.Source, "!", 2)[0]
+	}
+	ic.SendLine("NOTICE " + target + " :" + message)
+}
 
 // Returns socket fd. Needed for kexec
 func (ic *IRCClient) GetSocket() int {

@@ -90,13 +90,7 @@ func (q *TwitterPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	}
 
 	message := "@" + twt.User.Screen_name + ": " + twt.Text
-	var target string
-	if msg.Target != q.ic.GetStringOption("Server", "nick") {
-		target = msg.Target
-	} else {
-		target = strings.SplitN(msg.Source, "!", 2)[0]
-	}
-	q.ic.SendLine("NOTICE " + target + " :" + message)
+	q.ic.ReplyMsg(msg, message)
 }
 
 func (q *TwitterPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
