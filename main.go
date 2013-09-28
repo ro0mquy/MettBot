@@ -18,6 +18,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.ChannelsPlugin))
 	s.RegisterPlugin(new(plugins.AdminPlugin))
 	s.RegisterPlugin(new(plugins.TwitterPlugin))
+	s.RegisterPlugin(new(plugins.DongPlugin))
 
 	ok := s.Connect()
 	if ok != nil {
