@@ -30,8 +30,9 @@ func NewConfigPlugin(filename string) *ConfigPlugin {
 		c.AddOption("Server", "realname", "TestBot Client")
 		c.AddOption("Server", "trigger", ".")
 		c.AddSection("Auth")
-		c.WriteFile(filename, 0644, "go-faui2k11 default config file")
-		log.Println("Note: A new default configuration file has been generated in go-faui2k11.cfg. Please edit it to suit your needs and restart go-faui2k11 then")
+		c.AddSection("Info")
+		c.WriteFile(filename, 0644, "IRC Bot default config file")
+		log.Println("Note: A new default configuration file has been generated in " + filename + ". Please edit it to suit your needs and restart the bot then")
 		os.Exit(1)
 	}
 	for _, x := range []string{"host", "nick", "ident", "realname"} {
@@ -76,7 +77,7 @@ func (cp *ConfigPlugin) ProcessLine(msg *IRCMessage) {
 }
 func (cp *ConfigPlugin) Unregister() {
 	cp.lock.Lock()
-	cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")
+	cp.Conf.WriteFile(cp.filename, 0644, "IRC Bot Config")
 	cp.lock.Unlock()
 }
 func (cp *ConfigPlugin) Info() string {
@@ -85,15 +86,15 @@ func (cp *ConfigPlugin) Info() string {
 func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 	switch cmd.Command {
 	case "version":
-		cp.ic.Reply(cmd, "This is go-faui2k11, version 0.04")
+		cp.ic.Reply(cmd, cp.ic.GetStringOption("Info", "version"))
 	case "writeconf":
 		cp.lock.Lock()
-		cp.Conf.WriteFile("go-faui2k11.cfg", 0644, "go-faui2k11 config")
+		cp.Conf.WriteFile(cp.filename, 0644, "IRC Bot Config")
 		cp.Conf, _ = config.ReadDefault(cp.filename)
 		cp.lock.Unlock()
 		cp.ic.Reply(cmd, "Successfully flushed cached config entries")
 	case "source":
-		cp.ic.Reply(cmd, "source is (atm) at http://bitbucket.org/dpaulus/go-faui2k11")
+		cp.ic.Reply(cmd, cp.ic.GetStringOption("Info", "source"))
 	}
 }
 
