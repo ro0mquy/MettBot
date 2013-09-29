@@ -348,7 +348,7 @@ func (ic *IRCClient) Reply(cmd *IRCCommand, message string) {
 	} else {
 		target = strings.SplitN(cmd.Source, "!", 2)[0]
 	}
-	ic.SendLine("PRIVMSG " + target + " :" + message)
+	ic.SendLine("NOTICE " + target + " :" + message)
 }
 func (ic *IRCClient) ReplyMsg(msg *IRCMessage, message string) {
 	var target string
