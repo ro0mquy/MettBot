@@ -10,6 +10,8 @@ import (
 
 func main() {
 	rand.Seed(time.Now().Unix())
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	s := ircclient.NewIRCClient("mettbot.cfg")
 	s.RegisterPlugin(new(plugins.KexecPlugin))
 	s.RegisterPlugin(new(plugins.ListPlugins))
