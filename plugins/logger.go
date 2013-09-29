@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
+const (
+	default_logger_dir = "irclogs"
+)
+
 type LoggerPlugin struct {
 	ic  *ircclient.IRCClient
 	dir string
-}
-
-func NewLoggerPlugin(_dir string) *LoggerPlugin {
-	return &LoggerPlugin{dir: _dir}
 }
 
 func make_sure_dir_exists(dirname string) error {
@@ -33,6 +33,12 @@ func make_sure_dir_exists(dirname string) error {
 
 func (l *LoggerPlugin) Register(ic *ircclient.IRCClient) {
 	l.ic = ic
+	l.dir = l.ic.GetStringOption("Logger", "dir")
+	if l.dir == "" {
+		log.Println("added default logger dir value of \"" + default_logger_dir + "\" to config file")
+		l.ic.SetStringOption("Logger", "dir", default_logger_dir)
+		l.dir = default_logger_dir
+	}
 	// this is kind of an init function, let's check that stuff here
 	make_sure_dir_exists(l.dir)
 }
