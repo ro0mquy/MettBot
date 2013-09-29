@@ -6,10 +6,10 @@ import (
 	"../ircclient"
 	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
-	"io/ioutil"
 )
 
 type root struct {

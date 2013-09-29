@@ -57,7 +57,7 @@ func (ic *ircConn) Connect(hostport string) error {
 	ic.bio = bufio.NewReadWriter(bufio.NewReader(ic.conn), bufio.NewWriter(ic.conn))
 
 	go func() {
-		// This goroutine is responsible for doing blocking reads on the input socket 
+		// This goroutine is responsible for doing blocking reads on the input socket
 		// and forwarding them to the application
 		for {
 			s, err := ic.bio.ReadString('\n')

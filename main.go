@@ -2,9 +2,9 @@ package main
 
 import (
 	"./ircclient"
+	"./plugins"
 	"log"
 	"math/rand"
-	"./plugins"
 	"time"
 )
 

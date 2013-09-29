@@ -27,7 +27,7 @@ func make_sure_dir_exists(dirname string) error {
 		return nil
 	}
 	// will fail, as file already exists, but this gives us clearer errors
-	// than writing 
+	// than writing
 	return os.Mkdir(dirname, 0755)
 }
 

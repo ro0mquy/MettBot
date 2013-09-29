@@ -1,8 +1,8 @@
 package plugins
 
 import (
-	"../ircclient"
 	"../answers"
+	"../ircclient"
 	"strings"
 )
 

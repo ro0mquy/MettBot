@@ -1,11 +1,10 @@
 package plugins
 
-
 import (
+	"../ircclient"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"../ircclient"
 	"log"
 	"math/rand"
 	"net/http"
@@ -244,4 +243,3 @@ func (x *XKCDPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 
 func (x *XKCDPlugin) Unregister() {
 }
-

@@ -8,7 +8,7 @@ func RandStr(str string) string {
 	return section[index]
 }
 
-var answers = map[string][]string {
+var answers = map[string][]string{
 	"dong": {
 		"DONG",
 		"DÖNG",
