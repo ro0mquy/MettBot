@@ -58,7 +58,7 @@ func (q *MumblePlugin) Register(cl *ircclient.IRCClient) {
 }
 
 func (q *MumblePlugin) Unregister() {
-	return
+	q.Stop()
 }
 
 func (q *MumblePlugin) ProcessLine(msg *ircclient.IRCMessage) {
