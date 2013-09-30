@@ -22,6 +22,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.TwitterPlugin))
 	s.RegisterPlugin(new(plugins.DongPlugin))
 	s.RegisterPlugin(new(plugins.TopicDiffPlugin))
+	s.RegisterPlugin(new(plugins.MumblePlugin))
 
 	ok := s.Connect()
 	if ok != nil {
