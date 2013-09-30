@@ -103,6 +103,12 @@ func (q *MumblePlugin) run() {
 
 			q.lastUsers = users
 
+			// set topic in topicdiff plugin so, it won't get diffed
+			topicdiff := q.ic.GetPlugin("topicdiff").(*TopicDiffPlugin)
+			if topicdiff != nil {
+				topicdiff.SetTopic(q.ic.GetStringOption("Mumble", "channel"), newTopic)
+			}
+
 			q.ic.SendLine("TOPIC #" + q.ic.GetStringOption("Mumble", "channel") + " :" + newTopic)
 		case <-q.quit:
 			return

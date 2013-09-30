@@ -44,6 +44,12 @@ func (q *TopicDiffPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	} else if msg.Command == "TOPIC" {
 		oldTopic := q.topics[msg.Target]
 		newTopic := msg.Args[0]
+
+		// don't diff if topics are the same
+		if newTopic == oldTopic {
+			return
+		}
+
 		q.topics[msg.Target] = newTopic
 
 		message, err := q.diff(oldTopic, newTopic)
@@ -146,4 +152,9 @@ func (q *TopicDiffPlugin) diff(oldTopic, newTopic string) (outStr string, err er
 	}
 
 	return outStr, nil
+}
+
+// set the internal saved topic of channel (without #) to newTopic
+func (q *TopicDiffPlugin) SetTopic(channel, newTopic string) {
+	q.topics["#"+channel] = newTopic
 }
