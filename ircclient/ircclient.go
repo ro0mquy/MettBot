@@ -241,35 +241,41 @@ func (ic *IRCClient) dispatchHandlers(in string) {
 	if s == nil {
 		return
 	}
-	if (s.Command == "PRIVMSG" || s.Command == "NOTICE") && (s.Target == ic.GetStringOption("Server", "nick") || strings.Index(s.Args[0], ic.GetStringOption("Server", "trigger")) == 0) {
-		c = ParseCommand(s)
-		// Strip trigger, if necessary
-		if c != nil && s.Target != ic.GetStringOption("Server", "nick") && len(c.Command) != 0 {
-			c.Command = c.Command[len(ic.GetStringOption("Server", "trigger")):len(c.Command)]
-		}
-	}
 
 	// Call line handlers
 	for _, p := range ic.plugins {
 		go p.ProcessLine(s)
 	}
 
-	// Call command handler
-	if c == nil {
+	if (s.Command != "PRIVMSG" && s.Command != "NOTICE") || strings.Index(s.Args[0], ic.GetStringOption("Server", "trigger")) != 0 {
 		return
 	}
-	if handler, err := ic.handlers[c.Command]; err == true {
-		// Don't do regexp matching, if we don't need access anyway
-		if handler.Minaccess > 0 && ic.GetAccessLevel(c.Source) < handler.Minaccess {
-			ic.Reply(c, "You are not authorized to do that.")
-			return
-		}
-		if len(c.Args) < handler.Minparams {
-			ic.Reply(c, "This command requires at least "+fmt.Sprintf("%d", handler.Minparams)+" parameters")
-			return
-		}
-		go handler.Handler.ProcessCommand(c)
+
+	c = ParseCommand(s)
+	if c == nil || len(c.Command) == 0 {
+		return
 	}
+
+	// Strip trigger
+	c.Command = c.Command[len(ic.GetStringOption("Server", "trigger")):]
+
+	// Call command handler
+	handler, ok := ic.handlers[c.Command]
+	if !ok {
+		return
+	}
+
+	// Don't do regexp matching, if we don't need access anyway
+	if handler.Minaccess > 0 && ic.GetAccessLevel(c.Source) < handler.Minaccess {
+		ic.Reply(c, "You are not authorized to do that.")
+		return
+	}
+	if len(c.Args) < handler.Minparams {
+		//ic.Reply(c, "This command requires at least "+fmt.Sprintf("%d", handler.Minparams)+" parameters")
+		ic.Reply(c, ic.GetUsage(c.Command))
+		return
+	}
+	go handler.Handler.ProcessCommand(c)
 }
 
 // Starts the actual command processing. This function will block until the connection
