@@ -23,14 +23,15 @@ func main() {
 	s.RegisterPlugin(new(plugins.DongPlugin))
 	s.RegisterPlugin(new(plugins.TopicDiffPlugin))
 	s.RegisterPlugin(new(plugins.MumblePlugin))
+	s.RegisterPlugin(new(plugins.QuoteDBPlugin))
 
-	ok := s.Connect()
-	if ok != nil {
-		log.Fatal(ok.Error())
+	err := s.Connect()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
-	ok = s.InputLoop()
-	if ok != nil {
-		log.Fatal(ok.Error())
+	err = s.InputLoop()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 }
