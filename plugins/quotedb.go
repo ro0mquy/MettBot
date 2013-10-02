@@ -1,18 +1,25 @@
 package plugins
 
 import (
-	"strings"
-	"strconv"
-	"math/rand"
+	"../answers"
 	"../ircclient"
-	"sync"
-	"os"
 	"bufio"
+	"fmt"
 	"log"
+	"math/rand"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
+
+const (
+	default_time_format = "2006-01-02T15:04"
 )
 
 type QuoteDBPlugin struct {
-	sync.Mutex
+	sync.RWMutex
 	ic *ircclient.IRCClient
 }
 
@@ -28,13 +35,22 @@ func (q *QuoteDBPlugin) Usage(cmd string) string {
 	switch cmd {
 	case "quote":
 		return "quote <arg>: if arg is an integer, return quote number <arg>, else if <arg> is empty return a random quote, else return a random quote from user <arg>"
+	case "add":
+		return "add <quote>: adds the string <quote> appended to the current time to the database"
 	}
 	return ""
 }
 
 func (q *QuoteDBPlugin) Register(cl *ircclient.IRCClient) {
 	q.ic = cl
+
+	if q.ic.GetStringOption("QuoteDB", "timeformat") == "" {
+		log.Println("added default timeformat value of \"" + default_time_format + "\" to config file")
+		q.ic.SetStringOption("QuoteDB", "timeformat", default_time_format)
+	}
+
 	q.ic.RegisterCommandHandler("quote", 0, 0, q)
+	q.ic.RegisterCommandHandler("add", 1, 0, q)
 }
 
 func (q *QuoteDBPlugin) Unregister() {
@@ -72,18 +88,22 @@ func (q *QuoteDBPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 			}
 		}
 		q.ic.Reply(cmd, out)
+	case "add":
+		num := q.writeQuote(strings.Join(cmd.Args, " "), time.Now())
+		out := fmt.Sprintf(answers.RandStr("addedQuote"), num)
+		q.ic.Reply(cmd, out)
 	}
 }
 
 // return a channel on which all lines of file <file> are send
-func (q *QuoteDBPlugin) lines(file string) (<-chan string) {
+func (q *QuoteDBPlugin) lines(file string) <-chan string {
 	strChan := make(chan string)
 	go func(sc chan<- string) {
 		// close chan
 		defer close(sc)
 
-		q.Lock()
-		defer q.Unlock()
+		q.RLock()
+		defer q.RUnlock()
 
 		f, err := os.Open(file)
 		if err != nil {
@@ -103,7 +123,7 @@ func (q *QuoteDBPlugin) lines(file string) (<-chan string) {
 			log.Println(err)
 			return
 		}
-	} (strChan)
+	}(strChan)
 	return strChan
 }
 
@@ -155,4 +175,41 @@ func (q *QuoteDBPlugin) getRandomQuote(user string) string {
 	randQuote := quotes[rand.Intn(len(quotes))]
 	out := q.getLine(q.ic.GetStringOption("QuoteDB", "file"), randQuote)
 	return out
+}
+
+// writes the line <line> to the file <file>
+// returns an error if any occurs
+func (q *QuoteDBPlugin) writeLine(file, line string) (err error) {
+	q.Lock()
+	defer q.Unlock()
+
+	f, err := os.OpenFile(file, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(line + "\n")
+	if err != nil {
+		return
+	}
+
+	return nil
+}
+
+// adds a line to the database consisting of the time <t> and the string <quote>
+// returns which number the new quote is
+func (q *QuoteDBPlugin) writeQuote(quote string, t time.Time) uint {
+	line := fmt.Sprintf("%v %v", t.Format(q.ic.GetStringOption("QuoteDB", "timeformat")), quote)
+	err := q.writeLine(q.ic.GetStringOption("QuoteDB", "file"), line)
+	if err != nil {
+		log.Println(err)
+	}
+
+	strChan := q.lines(q.ic.GetStringOption("QuoteDB", "file"))
+	var i uint = 0
+	for _ = range strChan {
+		i++
+	}
+	return i - 1 // quotes numbering starts at 0
 }

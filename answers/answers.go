@@ -18,4 +18,10 @@ var answers = map[string][]string{
 		"BÄM",
 		"KLONK",
 	},
+	"addedQuote": { // needs %v which is a number
+		"Added quote #%v to database",
+		"The %vth quote which will be never forgotten",
+		"Another quote from the endless depths of #mett (#%v)",
+		"And we've got quote number %v",
+	},
 }
