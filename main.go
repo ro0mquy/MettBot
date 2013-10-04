@@ -24,6 +24,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.TopicDiffPlugin))
 	s.RegisterPlugin(new(plugins.MumblePlugin))
 	s.RegisterPlugin(new(plugins.QuoteDBPlugin))
+	s.RegisterPlugin(new(plugins.MettDBPlugin))
 
 	err := s.Connect()
 	if err != nil {

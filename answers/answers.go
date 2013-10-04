@@ -24,4 +24,8 @@ var answers = map[string][]string{
 		"Another quote from the endless depths of #mett (#%v)",
 		"And we've got quote number %v",
 	},
+	"addedMett": { // needs %v which is a number
+		"Added mett #%v to database",
+		"Now I've already %v entries of mettcontent",
+	},
 }
