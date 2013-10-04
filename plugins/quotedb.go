@@ -150,7 +150,7 @@ func (q *QuoteDBPlugin) getQuote(num uint) string {
 
 // returns a random quote from user <user>
 // if <user> is an empty string, returns a random quote from every user
-// if there are no quotes from this user, return an empty string
+// if there are no quotes from this user, returns an empty string
 func (q *QuoteDBPlugin) getRandomQuote(user string) string {
 	strChan := q.lines(q.ic.GetStringOption("QuoteDB", "file"))
 	var i uint = 0
@@ -173,7 +173,7 @@ func (q *QuoteDBPlugin) getRandomQuote(user string) string {
 	}
 
 	randQuote := quotes[rand.Intn(len(quotes))]
-	out := q.getLine(q.ic.GetStringOption("QuoteDB", "file"), randQuote)
+	out := q.getQuote(randQuote)
 	return out
 }
 
