@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	default_quit_msg    = "Bye."
+	default_quit_msg = "Bye."
 )
 
 type QuitHandler struct {

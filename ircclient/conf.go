@@ -102,11 +102,11 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 		cp.Lock()
 		err = cp.Conf.WriteFile(cp.filename, 0644, "IRC Bot Config")
 		if err != nil {
-			cp.ic.Reply(cmd, "Error writing config: " + err.Error())
+			cp.ic.Reply(cmd, "Error writing config: "+err.Error())
 		}
 		cp.Conf, err = config.ReadDefault(cp.filename)
 		if err != nil {
-			cp.ic.Reply(cmd, "Error loading config: " + err.Error())
+			cp.ic.Reply(cmd, "Error loading config: "+err.Error())
 		}
 		cp.Unlock()
 		cp.ic.Reply(cmd, "Successfully flushed cached config entries")
@@ -114,7 +114,7 @@ func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
 		cp.Lock()
 		cp.Conf, err = config.ReadDefault(cp.filename)
 		if err != nil {
-			cp.ic.Reply(cmd, "Error loading config: " + err.Error())
+			cp.ic.Reply(cmd, "Error loading config: "+err.Error())
 		}
 		cp.Unlock()
 		cp.ic.Reply(cmd, "Successfully loaded config entries")

@@ -7,7 +7,7 @@ import (
 )
 
 type authPlugin struct {
-	ic         *IRCClient
+	ic *IRCClient
 }
 
 func (a *authPlugin) Register(cl *IRCClient) {

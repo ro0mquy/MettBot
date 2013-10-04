@@ -12,7 +12,6 @@ import (
 	"sync"
 )
 
-
 type MettDBPlugin struct {
 	sync.RWMutex
 	ic *ircclient.IRCClient

@@ -14,7 +14,7 @@ const (
 )
 
 type LoggerPlugin struct {
-	ic  *ircclient.IRCClient
+	ic *ircclient.IRCClient
 }
 
 func make_sure_dir_exists(dirname string) error {
