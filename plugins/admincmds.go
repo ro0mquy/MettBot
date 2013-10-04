@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	auto_op_access = 200
+)
+
 type AdminPlugin struct {
 	ic *ircclient.IRCClient
 }
@@ -47,7 +51,7 @@ func (q *AdminPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	if msg.Command != "JOIN" {
 		return
 	}
-	if q.ic.GetAccessLevel(msg.Source) >= 200 {
+	if q.ic.GetAccessLevel(msg.Source) >= auto_op_access {
 		q.ic.SendLine("MODE " + msg.Target + " +o " + strings.SplitN(msg.Source, "!", 2)[0])
 		return
 	}
