@@ -74,7 +74,7 @@ func (ic *ircConn) Connect(hostport string) error {
 			}
 			s = strings.Trim(s, "\r\n")
 			ic.Input <- s
-			log.Println("<< " + s)
+			//log.Println("<< " + s)
 		}
 	}()
 	go func() {
@@ -85,7 +85,7 @@ func (ic *ircConn) Connect(hostport string) error {
 			case s := <-ic.Output:
 				s = s + "\r\n"
 				ic.tmgr.WaitSend(s)
-				log.Print(">> " + s)
+				//log.Print(">> " + s)
 				if _, err := ic.bio.WriteString(s); err != nil {
 					ic.Err <- errors.New("ircmessage: send: " + err.Error())
 					log.Println("Send failed: " + err.Error())
