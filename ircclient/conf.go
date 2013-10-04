@@ -16,7 +16,7 @@ type ConfigPlugin struct {
 	filename string
 	Conf     *config.Config
 	// Operations to the Config structure should be atomic
-	lock sync.Mutex
+	sync.Mutex
 }
 
 func NewConfigPlugin(filename string) *ConfigPlugin {
@@ -50,12 +50,15 @@ func NewConfigPlugin(filename string) *ConfigPlugin {
 	}
 	return &ConfigPlugin{filename: filename, Conf: c}
 }
+
 func (cp *ConfigPlugin) Register(cl *IRCClient) {
 	cp.ic = cl
 	cl.RegisterCommandHandler("version", 0, 0, cp)
 	cl.RegisterCommandHandler("source", 0, 0, cp)
-	cl.RegisterCommandHandler("writeconf", 0, 400, cp)
+	cl.RegisterCommandHandler("writeconfig", 0, 400, cp)
+	cl.RegisterCommandHandler("loadconfig", 0, 400, cp)
 }
+
 func (cp *ConfigPlugin) String() string {
 	return "conf"
 }
@@ -66,8 +69,10 @@ func (cp *ConfigPlugin) Usage(cmd string) string {
 		return "version: prints the current version number"
 	case "source":
 		return "source: prints the current url of the source of this bot"
-	case "writeconf":
-		return "writeconf: writes in-memory config options to disk"
+	case "writeconfig":
+		return "writeconfig: writes in-memory config options to disk"
+	case "loadconfig":
+		return "loadconfig: loads config options into memory"
 	}
 	return ""
 }
@@ -75,32 +80,43 @@ func (cp *ConfigPlugin) Usage(cmd string) string {
 func (cp *ConfigPlugin) ProcessLine(msg *IRCMessage) {
 	// Empty
 }
+
 func (cp *ConfigPlugin) Unregister() {
-	cp.lock.Lock()
+	cp.Lock()
 	cp.Conf.WriteFile(cp.filename, 0644, "IRC Bot Config")
-	cp.lock.Unlock()
+	cp.Unlock()
 }
+
 func (cp *ConfigPlugin) Info() string {
 	return "run-time configuration manager plugin"
 }
+
 func (cp *ConfigPlugin) ProcessCommand(cmd *IRCCommand) {
+	var err error
 	switch cmd.Command {
 	case "version":
 		cp.ic.Reply(cmd, cp.ic.GetStringOption("Info", "version"))
-	case "writeconf":
-		cp.lock.Lock()
-		cp.Conf.WriteFile(cp.filename, 0644, "IRC Bot Config")
-		cp.Conf, _ = config.ReadDefault(cp.filename)
-		cp.lock.Unlock()
-		cp.ic.Reply(cmd, "Successfully flushed cached config entries")
 	case "source":
 		cp.ic.Reply(cmd, cp.ic.GetStringOption("Info", "source"))
+	case "writeconfig":
+		cp.Lock()
+		err = cp.Conf.WriteFile(cp.filename, 0644, "IRC Bot Config")
+		if err != nil {
+			cp.ic.Reply(cmd, "Error writing config: " + err.Error())
+		}
+		cp.Conf, err = config.ReadDefault(cp.filename)
+		if err != nil {
+			cp.ic.Reply(cmd, "Error loading config: " + err.Error())
+		}
+		cp.Unlock()
+		cp.ic.Reply(cmd, "Successfully flushed cached config entries")
+	case "loadconfig":
+		cp.Lock()
+		cp.Conf, err = config.ReadDefault(cp.filename)
+		if err != nil {
+			cp.ic.Reply(cmd, "Error loading config: " + err.Error())
+		}
+		cp.Unlock()
+		cp.ic.Reply(cmd, "Successfully loaded config entries")
 	}
-}
-
-func (cp *ConfigPlugin) Lock() {
-	cp.lock.Lock()
-}
-func (cp *ConfigPlugin) Unlock() {
-	cp.lock.Unlock()
 }

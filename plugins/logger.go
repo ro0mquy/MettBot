@@ -15,7 +15,6 @@ const (
 
 type LoggerPlugin struct {
 	ic  *ircclient.IRCClient
-	dir string
 }
 
 func make_sure_dir_exists(dirname string) error {
@@ -33,14 +32,17 @@ func make_sure_dir_exists(dirname string) error {
 
 func (l *LoggerPlugin) Register(ic *ircclient.IRCClient) {
 	l.ic = ic
-	l.dir = l.ic.GetStringOption("Logger", "dir")
-	if l.dir == "" {
+	dir := l.ic.GetStringOption("Logger", "dir")
+	if dir == "" {
 		log.Println("added default logger dir value of \"" + default_logger_dir + "\" to config file")
 		l.ic.SetStringOption("Logger", "dir", default_logger_dir)
-		l.dir = default_logger_dir
+		dir = default_logger_dir
 	}
 	// this is kind of an init function, let's check that stuff here
-	make_sure_dir_exists(l.dir)
+	err := make_sure_dir_exists(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (l *LoggerPlugin) String() string {
@@ -85,7 +87,7 @@ func (l *LoggerPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 			s = msg.Source
 		}
 		host := strings.SplitN(l.ic.GetStringOption("Server", "host"), ":", 2)[0]
-		full_filename := l.dir + "/" + host + "_" + s
+		full_filename := l.ic.GetStringOption("Logger", "dir") + "/" + host + "_" + s
 		msg := fmt.Sprintf("%s | %s: %s\n", time.Now().String(),
 			strings.SplitN(msg.Source, "!", 2)[0], strings.Join(msg.Args, " "))
 		if err := write_string_to_file(full_filename, msg); err != nil {

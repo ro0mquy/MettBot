@@ -23,7 +23,7 @@ func (q *ChannelsPlugin) Info() string {
 	return "Manages channel auto-join and possibly options"
 }
 
-func (cp *ChannelsPlugin) Usage(cmd string) string {
+func (q *ChannelsPlugin) Usage(cmd string) string {
 	switch cmd {
 	case "join":
 		return "join <channel_without_#>, makes the bot join #<channel>"

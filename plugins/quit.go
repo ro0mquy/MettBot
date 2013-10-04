@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	quit_min_auth_level = 300
 	default_quit_msg    = "Bye."
 )
 
@@ -22,7 +21,7 @@ func (q *QuitHandler) Register(ic *ircclient.IRCClient) {
 		q.ic.SetStringOption("Quit", "quitmsg", default_quit_msg)
 	}
 
-	q.ic.RegisterCommandHandler("quit", 0, quit_min_auth_level, q)
+	q.ic.RegisterCommandHandler("quit", 0, 300, q)
 }
 
 func (q *QuitHandler) String() string {

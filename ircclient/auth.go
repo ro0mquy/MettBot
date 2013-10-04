@@ -8,12 +8,8 @@ import (
 
 type authPlugin struct {
 	ic         *IRCClient
-	confplugin *ConfigPlugin
 }
 
-func NewauthPlugin() *authPlugin {
-	return &authPlugin{nil, nil}
-}
 func (a *authPlugin) Register(cl *IRCClient) {
 	a.ic = cl
 	options := a.ic.GetOptions("Auth")
@@ -27,15 +23,14 @@ func (a *authPlugin) Register(cl *IRCClient) {
 	a.ic.RegisterCommandHandler("addaccess", 2, 400, a)
 	a.ic.RegisterCommandHandler("delaccess", 1, 400, a)
 }
+
 func (a *authPlugin) String() string {
 	return "auth"
 }
 
 func (a *authPlugin) Usage(cmd string) string {
 	switch cmd {
-	case "mya":
-		fallthrough
-	case "myaccess":
+	case "myaccess", "mya":
 		return cmd + ": tells you what access-level (i.e. permissions) you have"
 	case "addaccess":
 		return "addaccess <hostmask> <level>: adds access-level <level> for hostmask <hostmask>"
@@ -49,17 +44,18 @@ func (a *authPlugin) Usage(cmd string) string {
 func (a *authPlugin) ProcessLine(msg *IRCMessage) {
 	// Empty
 }
+
 func (a *authPlugin) Unregister() {
 	// Empty
 }
+
 func (a *authPlugin) Info() string {
 	return "Access control manager"
 }
+
 func (a *authPlugin) ProcessCommand(cmd *IRCCommand) {
 	switch cmd.Command {
-	case "myaccess":
-		fallthrough
-	case "mya":
+	case "myaccess", "mya":
 		level := a.GetAccessLevel(cmd.Source)
 		slevel := fmt.Sprintf("%d", level)
 		if level == 500 {
