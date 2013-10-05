@@ -2,9 +2,9 @@ package plugins
 
 import (
 	"../ircclient"
-	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"syscall"
 )
 
@@ -38,12 +38,17 @@ func (kp *KexecPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 }
 
 func (kp *KexecPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
-	log.Println("Now doing online restart.")
+	socket := kp.ic.GetSocket()
+	// check for error
+	if socket == -1 {
+		kp.ic.Reply(cmd, "Online restart failed")
+		return
+	}
+	kp.ic.Reply(cmd, "Now trying online restart.")
 	kp.ic.Shutdown()
-	log.Println("Plugin unload succeeded")
 	progname := os.Args[0]
 	log.Println("kexec: " + progname)
-	err := syscall.Exec(progname, []string{progname, fmt.Sprintf("%d", kp.ic.GetSocket())}, []string{})
+	err := syscall.Exec(progname, []string{progname, strconv.Itoa(socket)}, []string{})
 	// exec normally doesn't return
 	kp.ic.Reply(cmd, "couldn't kexec: "+err.Error())
 }
