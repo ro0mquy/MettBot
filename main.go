@@ -26,6 +26,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.QuoteDBPlugin))
 	s.RegisterPlugin(new(plugins.MettDBPlugin))
 	s.RegisterPlugin(new(plugins.XKCDPlugin))
+	s.RegisterPlugin(new(plugins.AltPlugin))
 
 	err := s.Connect()
 	if err != nil {
