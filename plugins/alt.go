@@ -17,7 +17,7 @@ import (
 const (
 	expected_urls        = 20000
 	false_positives_rate = 0.001
-	url_regex            = `(https?|ftp)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]`
+	url_regex            = `(?i)(https?|ftp)://[^\s/$.?#].[^\s]*`
 )
 
 type AltPlugin struct {
