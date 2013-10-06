@@ -42,7 +42,7 @@ func (q *AdminPlugin) Usage(cmd string) string {
 	case "action":
 		return "action <channelname> <message>"
 	case "raw":
-		return "raw <irclin>: sends raw line to server"
+		return "raw <ircline>: sends raw line to server"
 	}
 	return ""
 }
