@@ -17,6 +17,7 @@ func newthrottleIrcu() *throttleIrcu {
 }
 
 func (tm *throttleIrcu) WaitSend(line string) {
+	/*
 	tm.lastsent = time.Now()
 	if tm.lastsent.Sub(tm.tscounter) > 0 {
 		tm.tscounter = time.Now()
@@ -27,4 +28,5 @@ func (tm *throttleIrcu) WaitSend(line string) {
 		time.Sleep(t - (10 * time.Second))
 	}
 	return
+	*/
 }
