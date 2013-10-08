@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,6 +36,8 @@ func (q *QuoteDBPlugin) Usage(cmd string) string {
 	switch cmd {
 	case "quote":
 		return "quote <arg>: if arg is an integer, return quote number <arg>, else if <arg> is empty return a random quote, else return a random quote from user <arg>"
+	case "search":
+		return "search <pattern>: search for <pattern> in quote database, interpret <pattern> as regex if it starts and ends with an '/'"
 	case "add":
 		return "add <quote>: adds the string <quote> appended to the current time to the database"
 	}
@@ -50,6 +53,7 @@ func (q *QuoteDBPlugin) Register(cl *ircclient.IRCClient) {
 	}
 
 	q.ic.RegisterCommandHandler("quote", 0, 0, q)
+	q.ic.RegisterCommandHandler("search", 1, 0, q)
 	q.ic.RegisterCommandHandler("add", 1, 0, q)
 }
 
@@ -88,6 +92,15 @@ func (q *QuoteDBPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 			}
 		}
 		q.ic.Reply(cmd, out)
+	case "search":
+		results := q.searchQuotes(strings.Join(cmd.Args, " "))
+		if len(results) == 0 {
+			q.ic.Reply(cmd, "Didn't find any matching quotes")
+		}
+
+		for _, quote := range results {
+			q.ic.Reply(cmd, quote)
+		}
 	case "add":
 		num := q.writeQuote(strings.Join(cmd.Args, " "), time.Now())
 		out := fmt.Sprintf(answers.RandStr("addedQuote"), num)
@@ -175,6 +188,32 @@ func (q *QuoteDBPlugin) getRandomQuote(user string) string {
 	randQuote := quotes[rand.Intn(len(quotes))]
 	out := q.getQuote(randQuote)
 	return out
+}
+
+// searches for quotes and returns them as a string slice
+// if <pattern> begins and ends with an '/', interprets it as a regular expression
+func (q *QuoteDBPlugin) searchQuotes(pattern string) (results []string) {
+	results = make([]string, 0)
+	var regex *regexp.Regexp
+	if len(pattern) > 1 && strings.HasPrefix(pattern, "/") && strings.HasSuffix(pattern, "/") {
+		var err error
+		regex, err = regexp.Compile(pattern[1 : len(pattern)-1]) // trim '/'s
+		if err != nil {
+			results = append(results, "Couldn't search: "+err.Error())
+			return
+		}
+	}
+
+	strChan := q.lines(q.ic.GetStringOption("QuoteDB", "file"))
+	var i int = 0
+	for line := range strChan {
+		// if specified, match the regular expression or just check if <line> contains <pattern>
+		if (regex != nil && regex.MatchString(line)) || strings.Contains(line, pattern) {
+			results = append(results, strconv.Itoa(i)+" "+line)
+		}
+		i++
+	}
+	return results
 }
 
 // writes the line <line> to the file <file>
