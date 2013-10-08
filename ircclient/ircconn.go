@@ -146,23 +146,9 @@ func (ic *ircConn) GetSocket() int {
 		log.Println("Unable to get socket fd:", err.Error())
 		return -1
 	}
-	fd := int(file.Fd())
-
-	// retrieve the current flags set on the file descriptor
-	r0, _, e1 := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0)
-	if e1 != 0 {
-		log.Println("Unable to get file descriptor flags:", e1.Error())
-		return -1
-	}
-	flags := int(r0)
-	// unset FD_CLOEXEC (CloseOnExec)
-	flags &= ^syscall.FD_CLOEXEC
-
-	// set the old flags without CloseOnExec
-	_, _, e1 = syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_SETFD, uintptr(flags))
-	if e1 != 0 {
-		log.Println("Unable to set file descriptor flags:", e1.Error())
-		return -1
+	fd, err := syscall.Dup(int(file.Fd()))
+	if err != nil {
+		log.Println("Unable to duplicate file descriptor:", err)
 	}
 	return fd
 }
