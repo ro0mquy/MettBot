@@ -137,7 +137,11 @@ func (q *TopicDiffPlugin) diff(oldTopic, newTopic string) (outStr string, err er
 	}
 
 	cmd := exec.Command("wdiff", "-w"+db, "-x"+de, "-y"+ib, "-z"+ie, oldFile.Name(), newFile.Name())
-	out, _ := cmd.Output()
+	out, err := cmd.Output()
+	_, ok := err.(*exec.ExitError) // wdiff exits with 1
+	if !ok {
+		return
+	}
 	outStr = string(out)
 
 	coloring := map[string]string{ // http://oreilly.com/pub/h/1953

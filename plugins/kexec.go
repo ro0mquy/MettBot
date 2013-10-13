@@ -48,7 +48,7 @@ func (kp *KexecPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	kp.ic.Shutdown()
 	progname := os.Args[0]
 	log.Println("kexec: " + progname)
-	err := syscall.Exec(progname, []string{progname, strconv.Itoa(socket)}, []string{})
+	err := syscall.Exec(progname, []string{progname, strconv.Itoa(socket)}, os.Environ())
 	// exec normally doesn't return
 	kp.ic.Reply(cmd, "couldn't kexec: "+err.Error())
 }
