@@ -28,6 +28,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.XKCDPlugin))
 	s.RegisterPlugin(new(plugins.AltPlugin))
 	s.RegisterPlugin(new(plugins.TemperaturPlugin))
+	s.RegisterPlugin(new(plugins.CorrectionPlugin))
 
 	err := s.Connect()
 	if err != nil {
