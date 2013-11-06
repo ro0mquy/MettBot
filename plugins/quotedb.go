@@ -203,12 +203,13 @@ func (q *QuoteDBPlugin) searchQuotes(pattern string) (results []string) {
 			return
 		}
 	}
+	pattern = strings.ToLower(pattern) // make search case insensitive
 
 	strChan := q.lines(q.ic.GetStringOption("QuoteDB", "file"))
 	var i int = 0
 	for line := range strChan {
 		// if specified, match the regular expression or just check if <line> contains <pattern>
-		if (regex != nil && regex.MatchString(line)) || strings.Contains(line, pattern) {
+		if (regex != nil && regex.MatchString(line)) || strings.Contains(strings.ToLower(line), pattern) {
 			results = append(results, strconv.Itoa(i)+" "+line)
 		}
 		i++
