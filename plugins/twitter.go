@@ -141,13 +141,6 @@ func (q *TwitterPlugin) fetchTweet(tweetId string) (twt tweet, err error) {
 	}
 	twt.Text = html.UnescapeString(twt.Text)
 
-	twt.Text = strings.Map(func(r rune) rune {
-		if r < ' ' {
-			return ' '
-		}
-		return r
-	}, twt.Text)
-
 	if twt.User.Screen_name == "" || twt.Text == "" {
 		err = fmt.Errorf("Error in tweet:\n%v\nUser: %v\nTweet text: %v", string(body), twt.User.Screen_name, twt.Text)
 		return

@@ -50,11 +50,6 @@ func (q *DongPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 		message += str + " "
 	}
 
-	// don't send messages longer than 400 chars, so we won't hit the 512 chars limit
-	if len(message) > 400 {
-		message = message[:400]
-	}
-
 	q.ic.ReplyMsg(msg, message)
 }
 
