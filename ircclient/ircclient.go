@@ -304,6 +304,7 @@ func (ic *IRCClient) Disconnect(quitmsg string) {
 // Dumps a raw line to the server socket. This is usually called by plugins, but may also
 // be used by the library user.
 func (ic *IRCClient) SendLine(line string) {
+	line = strings.Replace(line, "\r", " ", -1)
 	line = strings.Replace(line, "\n", " ", -1) // remove newlines
 	// cut line, so we won't hit the 512 chars limit ("\r\n" will be appended)
 	if len(line) > 510 {
