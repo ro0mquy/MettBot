@@ -40,8 +40,14 @@ func (q *CorrectionPlugin) ProcessLine(msg *ircclient.IRCMessage) {
 	}
 
 	if strings.HasPrefix(msg.Args[0], "s/") {
-		correction := q.correct(q.lastMsgs[msg.Source], msg.Args[0])
-		if correction == "" {
+		correction, err := q.correct(q.lastMsgs[msg.Source], msg.Args[0])
+		if err != nil {
+			_, ok := err.(*exec.ExitError)
+			if !ok {
+				log.Println(err)
+				return
+			}
+			q.ic.ReplyMsg(msg, correction)
 			return
 		}
 		q.ic.ReplyMsg(msg, strings.SplitN(msg.Source, "!", 2)[0]+" meant: "+correction)
@@ -54,13 +60,9 @@ func (q *CorrectionPlugin) ProcessCommand(cmd *ircclient.IRCCommand) {
 	return
 }
 
-func (q *CorrectionPlugin) correct(message, replacement string) string {
+func (q *CorrectionPlugin) correct(message, replacement string) (string, error) {
 	sed := exec.Command("sed", replacement)
 	sed.Stdin = strings.NewReader(message)
 	correction, err := sed.CombinedOutput()
-	if err != nil {
-		log.Println(err)
-		return ""
-	}
-	return string(correction)
+	return string(correction), err
 }
