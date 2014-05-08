@@ -26,7 +26,7 @@ func main() {
 	s.RegisterPlugin(new(plugins.QuoteDBPlugin))
 	s.RegisterPlugin(new(plugins.MettDBPlugin))
 	s.RegisterPlugin(new(plugins.XKCDPlugin))
-	s.RegisterPlugin(new(plugins.AltPlugin))
+	//s.RegisterPlugin(new(plugins.AltPlugin))
 	s.RegisterPlugin(new(plugins.TemperaturPlugin))
 	s.RegisterPlugin(new(plugins.CorrectionPlugin))
 
