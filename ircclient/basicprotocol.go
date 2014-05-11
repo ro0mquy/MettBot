@@ -4,14 +4,33 @@ package ircclient
 
 import (
 	"log"
+	"time"
 )
 
 type basicProtocol struct {
-	ic *IRCClient
+	ic          *IRCClient
+	chanTimeout chan *IRCMessage
 }
 
 func (bp *basicProtocol) Register(cl *IRCClient) {
 	bp.ic = cl
+	bp.chanTimeout = make(chan *IRCMessage)
+
+	// start pinging routine
+	go func() {
+		for {
+			time.Sleep(2 * time.Minute)
+			bp.ic.SendLine("PING :" + bp.ic.GetStringOption("Server", "nick"))
+
+			select {
+			case <-bp.chanTimeout:
+			case <-time.After(20 * time.Second):
+				log.Println("Ping timeout")
+				bp.ic.Disconnect("Ping timeout")
+			}
+
+		}
+	}()
 }
 
 func (bp *basicProtocol) String() string {
@@ -29,7 +48,9 @@ func (bp *basicProtocol) ProcessLine(msg *IRCMessage) {
 		if len(msg.Args) != 1 {
 			log.Printf("WARNING: Invalid PING received")
 		}
-		bp.ic.conn.Output <- "PONG :" + msg.Args[0]
+		bp.ic.SendLine("PONG :" + msg.Args[0])
+	case "PONG":
+		bp.chanTimeout <- msg
 	}
 }
 func (bp *basicProtocol) Unregister() {
