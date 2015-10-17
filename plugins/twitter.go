@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 const (
@@ -111,7 +112,7 @@ func (q *TwitterPlugin) fetchTweet(tweetId string) (twt tweet, err error) {
 	request, err := http.NewRequest("GET", tweetUrl, nil)
 	request.Header.Add("Authorization", "Bearer "+oAuthToken)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 8 * time.Second}
 	resp, err := client.Do(request)
 	if err != nil {
 		return
@@ -169,7 +170,7 @@ func (q *TwitterPlugin) getOAuthToken() (err error) {
 	requestOAuth.Header.Add("Authorization", "Basic "+encodedKey)
 	requestOAuth.Header.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 8 * time.Second}
 	responseOAuth, err := client.Do(requestOAuth)
 	if err != nil {
 		return
